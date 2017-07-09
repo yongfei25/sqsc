@@ -29,6 +29,61 @@ async function recreateQueue (queueUrl:string, queueUrls:string[]) {
   return sqs.createQueue({ QueueName: queueName }).promise()
 }
 
+async function getQueueUrl (queueName:string):Promise<string|null> {
+  let result = await sqs.listQueues({ QueueNamePrefix: queueName }).promise()
+  if (result.QueueUrls && result.QueueUrls.length > 0) {
+    return Promise.resolve(result.QueueUrls[0])
+  } else {
+    return Promise.resolve(null)
+  }
+}
+
+interface ListMessageRequest {
+  limit?:number,
+  queueName:string,
+  print?:boolean,
+  timestamp?:boolean
+}
+
+async function listMessages (param:ListMessageRequest):Promise<AWS.SQS.Message[]> {
+  let queueUrl:string|null = await getQueueUrl(param.queueName)
+  let count:number = 0
+  let messages:AWS.SQS.Message[] = []
+  if (!queueUrl) {
+    return Promise.resolve(messages)
+  }
+  let attributes = await sqs.getQueueAttributes({
+    QueueUrl: queueUrl,
+    AttributeNames: ['ApproximateNumberOfMessages']
+  }).promise()
+
+  let numOfMessages:number = attributes.Attributes ? parseInt(attributes.Attributes.ApproximateNumberOfMessages) : Number.MAX_SAFE_INTEGER;
+  param.limit = param.limit || Number.MAX_SAFE_INTEGER
+  while (count < param.limit && count < numOfMessages) {
+    let data = await sqs.receiveMessage({
+      QueueUrl: queueUrl,
+      MaxNumberOfMessages: 10,
+      WaitTimeSeconds: 0,
+      VisibilityTimeout: 5,
+      AttributeNames: ['All']
+    }).promise()
+    if (data.Messages) {
+      count += data.Messages.length
+      data.Messages.forEach((x:AWS.SQS.Message) => {
+        messages.push(x)
+        if (param.print && x.Attributes) {
+          if (param.timestamp) {
+            console.log(`${new Date(parseInt(x.Attributes.SentTimestamp)).toISOString()} ${x.Body}`)
+          } else {
+            console.log(x.Body)
+          }
+        }
+      })
+    }
+  }
+  return Promise.resolve(messages)
+}
+
 describe('Basic command tests', function () {
   beforeEach(async function () {
     try {
@@ -51,7 +106,7 @@ describe('Basic command tests', function () {
       throw e
     }
   })
-  
+
   afterEach(async function () {
     console.log('Deleting queues')
     let queues = await sqs.listQueues().promise()
@@ -60,9 +115,9 @@ describe('Basic command tests', function () {
       deleteQueue(`${host}/${accountId}/TestErrorQueue`, queues.QueueUrls || [])
     ])
   })
-  
-  it('Should pass', function (done) {
-    assert(true)
-    done()
+
+  it('Should list all messages', async function () {
+    let messages = await listMessages({ queueName: 'TestQueue' })
+    assert.equal(messages.length, 50)
   })
 })
