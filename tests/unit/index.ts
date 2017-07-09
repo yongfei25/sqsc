@@ -12,10 +12,16 @@ let sqs = new AWS.SQS({
 })
 sqs.endpoint = new AWS.Endpoint(host)
 
-async function recreateQueue (queueUrl:string, queueUrls:string[]) {
+async function deleteQueue (queueUrl:string, queueUrls:string[]) {
   if (queueUrls.includes(queueUrl)) {
-    await sqs.deleteQueue({ QueueUrl: queueUrl }).promise()
+    return await sqs.deleteQueue({ QueueUrl: queueUrl }).promise()
+  } else {
+    return Promise.resolve()
   }
+}
+
+async function recreateQueue (queueUrl:string, queueUrls:string[]) {
+  await deleteQueue(queueUrl, queueUrls)
   let queueName:string | undefined = queueUrl.split('/').pop()
   if (!queueName) {
     throw new Error(`Unable to create queue from url ${queueUrl}`)
@@ -44,6 +50,15 @@ describe('Basic command tests', function () {
       console.error(e)
       throw e
     }
+  })
+  
+  afterEach(async function () {
+    console.log('Deleting queues')
+    let queues = await sqs.listQueues().promise()
+    let result = await Promise.all([
+      deleteQueue(`${host}/${accountId}/TestQueue`, queues.QueueUrls || []),
+      deleteQueue(`${host}/${accountId}/TestErrorQueue`, queues.QueueUrls || [])
+    ])
   })
   
   it('Should pass', function (done) {
