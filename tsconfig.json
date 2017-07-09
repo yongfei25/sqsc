@@ -2,13 +2,11 @@
   "compilerOptions": {
     "target": "es2016",
     "module": "commonjs",
-    "outDir": "build",
     "strict": true,
     "moduleResolution": "node",
     "sourceMap": false
   },
-	"include": [
-		"./src/**/*.ts",
-		"./tests/**/*.ts"
-	]
+  "exclude": [
+    "node_modules"
+  ]
 }
