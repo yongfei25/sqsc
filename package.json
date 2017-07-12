@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "pretest": "standard *.ts",
-    "test": "mocha tests/unit"
+    "test": "tsc -p . && mocha tests/unit"
   },
   "keywords": [],
   "author": "",
