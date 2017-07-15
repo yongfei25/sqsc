@@ -30,6 +30,7 @@
   "dependencies": {
     "async": "^2.5.0",
     "aws-sdk": "^2.81.0",
+    "columnify": "^1.5.4",
     "yargs": "^8.0.2"
   }
 }

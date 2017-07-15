@@ -1,5 +1,16 @@
 import * as AWS from 'aws-sdk'
 
+export function getSQS (env?:string) {
+  if (env && env === 'test') {
+    return new AWS.SQS({
+      region: 'us-east-1',
+      endpoint: 'http://0.0.0.0:4576'
+    })
+  } else {
+    return new AWS.SQS()
+  }
+}
+
 export async function deleteQueue (sqs:AWS.SQS, queueUrl:string, queueUrls:string[]):Promise<any> {
   if (queueUrls.includes(queueUrl)) {
     return await sqs.deleteQueue({ QueueUrl: queueUrl }).promise()
