@@ -21,6 +21,16 @@ function convertTs (ts:string):string {
   return ds.substring(0,10) + ' ' + ds.substring(11, ds.length-1)
 }
 
+function tableExists (db:sqlite3.Database, queueName:string):Promise<boolean> {
+  const tableName = getTableName(queueName)
+  return new Promise<boolean>((resolve, reject) => {
+    db.get('SELECT name FROM sqlite_master WHERE type=? and name = ?', ['table', tableName], (err, row) => {
+      if (err) return reject(err)
+      return resolve((row && row.name === tableName))
+    })
+  })
+}
+
 export async function recreateMessageTable (db:sqlite3.Database, queueName:string):Promise<sqlite3.RunResult> {
   const tableName = getTableName(queueName)
   let createTableSql = `
@@ -71,6 +81,38 @@ export async function insertMessages (db:sqlite3.Database, queueName:string, mes
       resolve(this.changes)
     })
   })
+}
+
+export async function getAllReceiptHandles (sqs:AWS.SQS, db:sqlite3.Database, queueName:string):Promise<string[]> {
+  const tableName = getTableName(queueName)
+  let p1 = new Promise<string[]>((resolve, reject) => {
+    db.all(`select receipt_handle from ${tableName}`, (err, rows) => {
+      if (err) return reject(err)
+      let receiptHandles:string[] = rows.map(r => r.receipt_handle)
+      return resolve(receiptHandles)
+    })
+  })
+  return p1
+}
+
+// WARN: if the message current is not inflight, changing the timeout will receive error 400
+export async function resetAllTimeout (sqs:AWS.SQS, db:sqlite3.Database, queueName:string, queueUrl?:string):Promise<number> {
+  const tableName = getTableName(queueName)
+  let exists = await tableExists(db, queueName)
+  let result = 0
+  if (exists) {
+    let results = await Promise.all([
+      getAllReceiptHandles(sqs, db, queueName),
+      queueUrl? queueUrl : common.getQueueUrl(sqs, queueName)
+    ])
+    let receiptHandles:string[] = results[0]
+    let url = results[1]
+    if (receiptHandles.length > 0) {
+      await common.changeTimeout(sqs, url, receiptHandles, 1)
+      result = receiptHandles.length
+    }
+  }
+  return Promise.resolve(result)
 }
 
 export async function pull (sqs:AWS.SQS, db:sqlite3.Database, params:PullParams, progress?:ProgressCallback):Promise<number> {

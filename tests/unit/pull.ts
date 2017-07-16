@@ -65,6 +65,10 @@ describe('Pull API', function () {
       assert.equal(data.count, totalMessages)
     })
   })
+  it('should pull messages and store in sqlite for second time', async function () {
+    let totalInserted = await pull.pull(sqs, db, { queueName: 'TestQueue' })
+    assert.equal(totalInserted, totalMessages)
+  })
   it('should have valid data structure for new records', async function () {
     db.get('select * from msg_TestQueue', (err, row) => {
       if (err) Promise.reject(err)
