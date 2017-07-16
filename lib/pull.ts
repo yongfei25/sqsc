@@ -5,6 +5,12 @@ function getTableName (queueName:string):string {
   return `msg_${queueName}`
 }
 
+function convertTs (ts:string):string {
+  let d = new Date(parseInt(ts))
+  let ds = d.toISOString()
+  return ds.substring(0,10) + ' ' + ds.substring(11, ds.length-1)
+}
+
 export async function recreateMessageTable (db:sqlite3.Database, queueName:string):Promise<sqlite3.RunResult> {
   const tableName = getTableName(queueName)
   let createTableSql = `
@@ -36,17 +42,19 @@ export async function recreateMessageTable (db:sqlite3.Database, queueName:strin
 }
 
 export async function insertMessages (db:sqlite3.Database, queueName:string, messages:AWS.SQS.Message[]):Promise<sqlite3.RunResult> {
-  let sql = `insert or replace into ? values `
-  let params = [getTableName(queueName)]
+  const tableName = getTableName(queueName)
+  let sql = `insert or replace into ${tableName} values `
+  let params = []
   for (let i=0; i<messages.length; i++) {
-    sql += ('(?,?,?,?,?,?,?,?,?,?,?)')
+    sql += '(?,?,?,?,?,?,?,?,?,?,?),'
     let m = messages[i]
     params.push(
-      m.MessageId, m.ReceiptHandle, m.MD5OfBody, m.Body, m.Attributes['SentTimestamp'],
-      m.Attributes['SenderId'], m.Attributes['ApproximateReceiveCount'], m.Attributes['ApproximateFirstReceiveTimestamp'],
+      m.MessageId, m.ReceiptHandle, m.MD5OfBody, m.Body, convertTs(m.Attributes['SentTimestamp']),
+      m.Attributes['SenderId'], m.Attributes['ApproximateReceiveCount'], convertTs(m.Attributes['ApproximateFirstReceiveTimestamp']),
       m.Attributes['MessageGroupId'], m.Attributes['MessageDeduplicationId'], m.Attributes['SequenceNumber']
     )
   }
+  sql = sql.substring(0, sql.length-1)
   return new Promise<sqlite3.RunResult>((resolve, reject) => {
     db.run(sql, params, (err) => {
       if (err) return reject(err)

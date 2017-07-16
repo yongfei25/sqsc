@@ -5,6 +5,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import * as pull from '../../lib/pull'
 import * as common from '../../lib/common'
+import {listMessage} from '../../lib/list-message'
 
 describe('Pull API', function () {
   const dbPath = path.join(__dirname, '../temp/testdb')
@@ -53,6 +54,22 @@ describe('Pull API', function () {
     db.get('select count(*) count from msg_TestQueue', (err, data) => {
       if (err) return Promise.reject(err)
       assert.equal(data.count, 0)
+    })
+  })
+  it('should insert messages into table', async function() {
+    let messages:AWS.SQS.Message[] = await listMessage(sqs, { queueName: 'TestQueue', limit: 10 })
+    await pull.insertMessages(db, 'TestQueue', messages)
+    db.get('select count(*) count from msg_TestQueue', (err, data) => {
+      if (err) return Promise.reject(err)
+      assert.equal(data.count, 10)
+    })
+  })
+  it('should have valid data structure for new records', async function () {
+    db.get('select * from msg_TestQueue', (err, row) => {
+      if (err) Promise.reject(err)
+      assert.ok(JSON.parse(row.body).first_name)
+      assert.notEqual(new Date(row.sent_timestamp), NaN)
+      assert.notEqual(new Date(row.first_receive_timestamp), NaN)
     })
   })
 })
