@@ -36,3 +36,15 @@ export async function getQueueUrl (sqs:AWS.SQS, queueName:string):Promise<string
     return Promise.resolve(null)
   }
 }
+
+export async function getQueueAttributes (sqs:AWS.SQS, queueName:string):Promise<AWS.SQS.Types.GetQueueAttributesResult> {
+  let data = await sqs.getQueueUrl({ QueueName: queueName }).promise()
+  if (!data.QueueUrl) {
+    throw new Error(`QueueUrl does not exists for ${queueName}`)
+  } else {
+    return await sqs.getQueueAttributes({
+      QueueUrl: data.QueueUrl,
+      AttributeNames: ['All']
+    }).promise()
+  }
+}

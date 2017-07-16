@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
+  "bin": {
+    "sqsc": "bin/index.js"
+  },
   "scripts": {
     "pretest": "standard *.ts",
     "test": "tsc -p . && mocha tests/unit"
