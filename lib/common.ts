@@ -11,6 +11,15 @@ export function getSQS (env?:string) {
   }
 }
 
+function queueExists(queueUrls:string[], queueName:string):boolean {
+  queueUrls.forEach((url:string) => {
+    if (url.split('/').pop() === queueName) {
+      return true
+    }
+  })
+  return false
+}
+
 export async function deleteQueue (sqs:AWS.SQS, queueUrl:string, queueUrls:string[]):Promise<any> {
   if (queueUrls.includes(queueUrl)) {
     return await sqs.deleteQueue({ QueueUrl: queueUrl }).promise()
@@ -19,13 +28,19 @@ export async function deleteQueue (sqs:AWS.SQS, queueUrl:string, queueUrls:strin
   }
 }
 
-export async function recreateQueue (sqs:AWS.SQS, queueUrl:string, queueUrls:string[]):Promise<AWS.SQS.CreateQueueResult> {
-  await deleteQueue(sqs, queueUrl, queueUrls)
-  let queueName:string | undefined = queueUrl.split('/').pop()
-  if (!queueName) {
-    throw new Error(`Unable to create queue from url ${queueUrl}`)
+export async function recreateQueue (sqs:AWS.SQS, queueName:string):Promise<AWS.SQS.CreateQueueResult|void> {
+  try {
+    let queueUrl = await getQueueUrl(sqs, queueName)
+    if (queueUrl) {
+      await sqs.deleteQueue({ QueueUrl: queueUrl }).promise()
+    }
+    return await sqs.createQueue({ QueueName: queueName }).promise()
+  } catch (err) {
+    if (err.code === 'AWS.SimpleQueueService.NonExistentQueue') {
+      return Promise.resolve()
+    }
+    throw err
   }
-  return sqs.createQueue({ QueueName: queueName }).promise()
 }
 
 export async function getQueueUrl (sqs:AWS.SQS, queueName:string):Promise<string|null> {

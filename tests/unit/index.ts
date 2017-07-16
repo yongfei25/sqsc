@@ -3,7 +3,7 @@ import * as AWS from 'aws-sdk'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as async from 'async'
-import {deleteQueue, recreateQueue, getQueueUrl} from '../../lib/common'
+import * as common from '../../lib/common'
 import {listMessage} from '../../lib/list-message'
 
 const region = 'us-east-1'
@@ -19,16 +19,16 @@ describe('Basic command tests', function () {
     try {
       // Create queues and populate SQS messages
       console.log('Reseting test queues.')
-      let queues = await sqs.listQueues().promise()
       let result = await Promise.all([
-        recreateQueue(sqs, `${host}/${accountId}/TestQueue`, queues.QueueUrls || []),
-        recreateQueue(sqs, `${host}/${accountId}/TestErrorQueue`, queues.QueueUrls || [])
+        common.recreateQueue(sqs, 'TestQueue'),
+        common.recreateQueue(sqs, 'TestErrorQueue')
       ])
+      let queueUrls = result.map((x:AWS.SQS.CreateQueueResult) => x.QueueUrl)
       // populate messages
       console.log('Populating SQS messages.')
       let messages:string[] = fs.readFileSync(path.join(__dirname, '../fixtures/messages')).toString().split('\n')
       let promises = messages.map((msg:string) => {
-        return sqs.sendMessage({ MessageBody: msg, QueueUrl: `${host}/${accountId}/TestQueue` }).promise()
+        return sqs.sendMessage({ MessageBody: msg, QueueUrl: queueUrls[0] }).promise()
       })
       let send = await Promise.all(promises)
     } catch (e) {
@@ -41,8 +41,8 @@ describe('Basic command tests', function () {
     console.log('Deleting queues')
     let queues = await sqs.listQueues().promise()
     let result = await Promise.all([
-      deleteQueue(sqs, `${host}/${accountId}/TestQueue`, queues.QueueUrls || []),
-      deleteQueue(sqs, `${host}/${accountId}/TestErrorQueue`, queues.QueueUrls || [])
+      common.deleteQueue(sqs, `${host}/${accountId}/TestQueue`, queues.QueueUrls || []),
+      common.deleteQueue(sqs, `${host}/${accountId}/TestErrorQueue`, queues.QueueUrls || [])
     ])
   })
 
