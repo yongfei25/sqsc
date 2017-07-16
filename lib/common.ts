@@ -38,9 +38,33 @@ export async function getQueueAttributes (sqs:AWS.SQS, queueName:string):Promise
   if (!data.QueueUrl) {
     throw new Error(`QueueUrl does not exists for ${queueName}`)
   } else {
-    return await sqs.getQueueAttributes({
+    return sqs.getQueueAttributes({
       QueueUrl: data.QueueUrl,
       AttributeNames: ['All']
+    }).promise()
+  }
+}
+
+export async function changeTimeout (sqs:AWS.SQS, queueUrl:string, receiptHandles:string[], timeout:number)
+  :Promise<any> {
+  if (process.env.NODE_ENV === 'test') {
+    // Can't seem to use batch API in localstack?
+    // Getting "500: null" Error
+    let promises = receiptHandles.map((r:string) => {
+      return sqs.changeMessageVisibility({
+        QueueUrl: queueUrl,
+        ReceiptHandle: r,
+        VisibilityTimeout: timeout
+      }).promise()
+    })
+    return Promise.all(promises)
+  } else {
+    let entries = receiptHandles.map((r:string) => {
+      return { Id: r, ReceiptHandle: r, VisibilityTimeout: timeout }
+    })
+    return sqs.changeMessageVisibilityBatch({
+      QueueUrl: queueUrl,
+      Entries: entries
     }).promise()
   }
 }

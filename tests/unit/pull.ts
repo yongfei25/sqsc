@@ -11,6 +11,7 @@ describe('Pull API', function () {
   const dbPath = path.join(__dirname, '../temp/testdb')
   let db:sqlite3.Database
   let sqs:AWS.SQS
+  let totalMessages = 50
 
   before(async function () {
     console.log('Opening DB')
@@ -56,20 +57,20 @@ describe('Pull API', function () {
       assert.equal(data.count, 0)
     })
   })
-  it('should insert messages into table', async function() {
-    let messages:AWS.SQS.Message[] = await listMessage(sqs, { queueName: 'TestQueue', limit: 10 })
-    await pull.insertMessages(db, 'TestQueue', messages)
+  it('should pull messages and store in sqlite', async function () {
+    let totalInserted = await pull.pull(sqs, db, { queueName: 'TestQueue' })
+    assert.equal(totalInserted, totalMessages)
     db.get('select count(*) count from msg_TestQueue', (err, data) => {
       if (err) return Promise.reject(err)
-      assert.equal(data.count, 10)
+      assert.equal(data.count, totalMessages)
     })
   })
   it('should have valid data structure for new records', async function () {
     db.get('select * from msg_TestQueue', (err, row) => {
       if (err) Promise.reject(err)
       assert.ok(JSON.parse(row.body).first_name)
-      assert.notEqual(new Date(row.sent_timestamp), NaN)
-      assert.notEqual(new Date(row.first_receive_timestamp), NaN)
+      assert.notEqual(new Date(row.sent_timestamp), 'Invalid Date')
+      assert.notEqual(new Date(row.first_receive_timestamp), 'Invalid Date')
     })
   })
 })

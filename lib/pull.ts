@@ -1,5 +1,15 @@
 import * as AWS from 'aws-sdk'
 import * as sqlite3 from 'sqlite3'
+import * as common from './common'
+
+interface ProgressCallback {
+  (current:number, total:number): void
+}
+
+interface PullParams {
+  queueName:string,
+  timeout?:number
+}
 
 function getTableName (queueName:string):string {
   return `msg_${queueName}`
@@ -41,7 +51,7 @@ export async function recreateMessageTable (db:sqlite3.Database, queueName:strin
   })
 }
 
-export async function insertMessages (db:sqlite3.Database, queueName:string, messages:AWS.SQS.Message[]):Promise<sqlite3.RunResult> {
+export async function insertMessages (db:sqlite3.Database, queueName:string, messages:AWS.SQS.Message[]):Promise<number> {
   const tableName = getTableName(queueName)
   let sql = `insert or replace into ${tableName} values `
   let params = []
@@ -55,14 +65,46 @@ export async function insertMessages (db:sqlite3.Database, queueName:string, mes
     )
   }
   sql = sql.substring(0, sql.length-1)
-  return new Promise<sqlite3.RunResult>((resolve, reject) => {
-    db.run(sql, params, (err) => {
+  return new Promise<number>((resolve, reject) => {
+    db.run(sql, params, function (err) {
       if (err) return reject(err)
-      resolve()
+      resolve(this.changes)
     })
   })
 }
 
-export async function pull (sqs:AWS.SQS, queueName:string) {
-
+export async function pull (sqs:AWS.SQS, db:sqlite3.Database, params:PullParams, progress?:ProgressCallback):Promise<number> {
+  let queueUrl = await common.getQueueUrl(sqs, params.queueName)
+  let result = 0
+  if (queueUrl) {
+    let results = await Promise.all([
+      recreateMessageTable(db, params.queueName),
+      sqs.getQueueAttributes({
+        QueueUrl: queueUrl,
+        AttributeNames: ['ApproximateNumberOfMessages']
+      }).promise()
+    ])
+    let createTableResult = results[0]
+    let attributes = results[1]
+    let total:number = attributes.Attributes ? parseInt(attributes.Attributes.ApproximateNumberOfMessages) : Number.MAX_SAFE_INTEGER;
+    let current:number = 0
+    let receiptHandles:string[] = []
+    while (current < total) {
+      let data = await sqs.receiveMessage({
+        QueueUrl: queueUrl,
+        MaxNumberOfMessages: 10,
+        VisibilityTimeout: params.timeout || 30,
+        AttributeNames: ['All']
+      }).promise()
+      let inserted = await insertMessages(db, params.queueName, data.Messages)
+      receiptHandles = receiptHandles.concat(data.Messages.map(m => m.ReceiptHandle))
+      current += inserted
+      result = current
+      if (progress) {
+        progress(current, total)
+      }
+    }
+    await common.changeTimeout(sqs, queueUrl, receiptHandles, 0)
+  }
+  return Promise.resolve(result)
 }
