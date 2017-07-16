@@ -6,16 +6,11 @@ import * as async from 'async'
 import * as common from '../../lib/common'
 import {listMessage} from '../../lib/list-message'
 
-const region = 'us-east-1'
-const accountId = '123456789012'
-const host = 'http://0.0.0.0:4576'
-let sqs = new AWS.SQS({
-  region: region
-})
-sqs.endpoint = new AWS.Endpoint(host)
-
 describe('Basic command tests', function () {
-  beforeEach(async function () {
+  let sqs:AWS.SQS
+
+  before(async function () {
+    sqs = common.getSQS('test')
     try {
       // Create queues and populate SQS messages
       console.log('Reseting test queues.')
@@ -37,12 +32,12 @@ describe('Basic command tests', function () {
     }
   })
 
-  afterEach(async function () {
+  after(async function () {
     console.log('Deleting queues')
     let queues = await sqs.listQueues().promise()
     let result = await Promise.all([
-      common.deleteQueue(sqs, `${host}/${accountId}/TestQueue`, queues.QueueUrls || []),
-      common.deleteQueue(sqs, `${host}/${accountId}/TestErrorQueue`, queues.QueueUrls || [])
+      common.deleteQueue(sqs, 'TestQueue'),
+      common.deleteQueue(sqs, 'TestErrorQueue')
     ])
   })
 
