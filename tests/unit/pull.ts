@@ -21,7 +21,6 @@ describe('Pull API', function () {
 
     // Create queues and populate SQS messages
     sqs = common.getSQS(process.env.NODE_ENV)
-    console.log('Reseting test queues.')
     let result = await Promise.all([
       common.recreateQueue(sqs, 'TestQueue'),
       common.recreateQueue(sqs, 'TestErrorQueue')
@@ -50,6 +49,10 @@ describe('Pull API', function () {
   })
 
   it('should create table for queue', async function () {
-
+    let data = await pull.recreateMessageTable (db, 'TestQueue')
+    db.get('select count(*) count from msg_TestQueue', (err, data) => {
+      if (err) return Promise.reject(err)
+      assert.equal(data.count, 0)
+    })
   })
 })

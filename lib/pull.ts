@@ -5,10 +5,10 @@ function getTableName (queueName:string):string {
   return `msg_${queueName}`
 }
 
-async function recreateMessageTable (db:sqlite3.Database, queueName:string):Promise<sqlite3.RunResult> {
-  let sql = `
-    drop table if exists $tableName;
-    create table $tableName (
+export async function recreateMessageTable (db:sqlite3.Database, queueName:string):Promise<sqlite3.RunResult> {
+  const tableName = getTableName(queueName)
+  let createTableSql = `
+    create table ${tableName} (
       id text primary key,
       receipt_handle text,
       md5_body text,
@@ -21,18 +21,21 @@ async function recreateMessageTable (db:sqlite3.Database, queueName:string):Prom
       deduplication_id text,
       sequence_number text
     );
-    create index if not exists idx_sequence_number on $tableName (sequence_number);
-    create index if not exists idx_sent_timestamp on $tableName (sent_timestamp);
   `
   return new Promise<sqlite3.RunResult>((resolve, reject) => {
-    db.run(sql, { $tableName: getTableName(queueName) }, (err) => {
-      if (err) return reject(err)
-      return resolve()
+    db.serialize(function () {
+      db.run(`drop table if exists ${tableName};`)
+      db.run(createTableSql)
+      db.run(`create index if not exists idx_sequence_number on ${tableName} (sequence_number);`)
+      db.run(`create index if not exists idx_sent_timestamp on ${tableName} (sent_timestamp);`, (err) => {
+        if (err) return reject(err)
+        return resolve()
+      })
     })
   })
 }
 
-async function insertMessages (db:sqlite3.Database, queueName:string, messages:AWS.SQS.Message[]):Promise<sqlite3.RunResult> {
+export async function insertMessages (db:sqlite3.Database, queueName:string, messages:AWS.SQS.Message[]):Promise<sqlite3.RunResult> {
   let sql = `insert or replace into ? values `
   let params = [getTableName(queueName)]
   for (let i=0; i<messages.length; i++) {

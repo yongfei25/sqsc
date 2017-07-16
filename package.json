@@ -8,7 +8,7 @@
   },
   "scripts": {
     "pretest": "standard *.ts",
-    "test": "tsc -p . && mocha tests/unit"
+    "test": "tsc -p . && NODE_ENV=test mocha tests/unit"
   },
   "keywords": [],
   "author": "",
