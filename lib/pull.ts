@@ -63,7 +63,7 @@ export async function recreateMessageTable (db:sqlite3.Database, queueName:strin
 
 export async function insertMessages (db:sqlite3.Database, queueName:string, messages:AWS.SQS.Message[]):Promise<number> {
   const tableName = getTableName(queueName)
-  let sql = `insert or replace into ${tableName} values `
+  let sql = `insert or ignore into ${tableName} values `
   let params = []
   for (let i=0; i<messages.length; i++) {
     sql += '(?,?,?,?,?,?,?,?,?,?,?),'

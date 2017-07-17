@@ -77,4 +77,13 @@ describe('Pull API', function () {
       assert.notEqual(new Date(row.first_receive_timestamp), 'Invalid Date')
     })
   })
+  it('should deduplicate messages', async function () {
+    await pull.recreateMessageTable (db, 'TestQueue')
+    let queueUrl = await common.getQueueUrl(sqs, 'TestQueue')
+    let result = await sqs.receiveMessage({ QueueUrl: queueUrl, MaxNumberOfMessages: 10 }).promise()
+    let inserted = await pull.insertMessages(db, 'TestQueue', result.Messages)
+    assert.equal(inserted, 10)
+    inserted = await pull.insertMessages(db, 'TestQueue', result.Messages)
+    assert.equal(inserted, 0)
+  })
 })
