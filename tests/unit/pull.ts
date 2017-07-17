@@ -22,7 +22,7 @@ describe('Pull API', function () {
     })
 
     // Create queues and populate SQS messages
-    sqs = common.getSQS(process.env.NODE_ENV)
+    sqs = common.getSQS(process.env.SQSC_NODE_ENV)
     let result = await Promise.all([
       common.recreateQueue(sqs, 'TestQueue'),
       common.recreateQueue(sqs, 'TestErrorQueue')

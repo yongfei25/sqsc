@@ -3,6 +3,7 @@ import * as ini from 'ini'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
+import * as sqlite3 from 'sqlite3'
 
 export function getSQS (env?:string) {
   if (env && env === 'test') {
@@ -28,6 +29,16 @@ export function getSQS (env?:string) {
       })
     }
   }
+}
+
+export async function getDb():Promise<sqlite3.Database> {
+  let filename = path.join(__dirname, '../main.db')
+  let promise = new Promise<sqlite3.Database>((resolve, reject) => {
+    let db = new sqlite3.Database(filename)
+    db.on('error', (err) => reject(err))
+    db.on('open', () => resolve(db))
+  })
+  return promise
 }
 
 export async function deleteQueue (sqs:AWS.SQS, queueName:string):Promise<any> {
@@ -66,7 +77,7 @@ export async function getQueueAttributes (sqs:AWS.SQS, queueName:string):Promise
 
 export async function changeTimeout (sqs:AWS.SQS, queueUrl:string, receiptHandles:string[], timeout:number)
   :Promise<any> {
-  if (process.env.NODE_ENV === 'test') {
+  if (process.env.SQSC_NODE_ENV === 'test') {
     // Can't seem to use batch API in localstack?
     // Getting "500: null" Error
     let promises = receiptHandles.map((r:string) => {

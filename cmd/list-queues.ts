@@ -6,7 +6,7 @@ import * as common from '../lib/common'
 exports.command = 'lq [prefix]'
 exports.desc = 'List all queues'
 exports.handler = function (argv:yargs.Arguments) {
-  let sqs:AWS.SQS = common.getSQS(process.env.NODE_ENV)
+  let sqs:AWS.SQS = common.getSQS(process.env.SQSC_NODE_ENV)
   sqs.listQueues({
     QueueNamePrefix: argv.prefix || undefined
   }, (err, data) => {
