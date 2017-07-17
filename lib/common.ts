@@ -12,14 +12,21 @@ export function getSQS (env?:string) {
       apiVersion: '2012-11-05'
     })
   } else {
-    const configPath = path.join(os.homedir(), '.aws', 'config')
-    const profile = process.env.AWS_PROFILE || 'default'
-    const config = ini.parse(fs.readFileSync(configPath, 'utf-8'))
-    const region = config[`profile ${profile}`] ? config[`profile ${profile}`].region : 'us-east-1'
-    return new AWS.SQS({
-      apiVersion: '2012-11-05',
-      region: region
-    })
+    try {
+      const configPath = path.join(os.homedir(), '.aws', 'config')
+      const profile = process.env.AWS_PROFILE || 'default'
+      const config = ini.parse(fs.readFileSync(configPath, 'utf-8'))
+      const region = config[`profile ${profile}`] ? config[`profile ${profile}`].region : 'us-east-1'
+      return new AWS.SQS({
+        apiVersion: '2012-11-05',
+        region: region
+      })
+    } catch (e) {
+      return new AWS.SQS({
+        apiVersion: '2012-11-05',
+        region: 'us-east-1'
+      })
+    }
   }
 }
 
