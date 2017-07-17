@@ -41,6 +41,16 @@ export async function getDb():Promise<sqlite3.Database> {
   return promise
 }
 
+export function getTableName (queueName:string):string {
+  return `msg_${queueName}`
+}
+
+export function convertTs (ts:string):string {
+  let d = new Date(parseInt(ts))
+  let ds = d.toISOString()
+  return ds.substring(0,10) + ' ' + ds.substring(11, ds.length-1)
+}
+
 export async function deleteQueue (sqs:AWS.SQS, queueName:string):Promise<any> {
   let queueUrl = await getQueueUrl(sqs, queueName)
   if (queueUrl) {

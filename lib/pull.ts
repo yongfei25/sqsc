@@ -11,18 +11,8 @@ interface PullParams {
   timeout?:number
 }
 
-function getTableName (queueName:string):string {
-  return `msg_${queueName}`
-}
-
-function convertTs (ts:string):string {
-  let d = new Date(parseInt(ts))
-  let ds = d.toISOString()
-  return ds.substring(0,10) + ' ' + ds.substring(11, ds.length-1)
-}
-
 function tableExists (db:sqlite3.Database, queueName:string):Promise<boolean> {
-  const tableName = getTableName(queueName)
+  const tableName = common.getTableName(queueName)
   return new Promise<boolean>((resolve, reject) => {
     db.get('SELECT name FROM sqlite_master WHERE type=? and name = ?', ['table', tableName], (err, row) => {
       if (err) return reject(err)
@@ -32,7 +22,7 @@ function tableExists (db:sqlite3.Database, queueName:string):Promise<boolean> {
 }
 
 export async function recreateMessageTable (db:sqlite3.Database, queueName:string):Promise<sqlite3.RunResult> {
-  const tableName = getTableName(queueName)
+  const tableName = common.getTableName(queueName)
   let createTableSql = `
     create table ${tableName} (
       id text primary key,
@@ -62,15 +52,15 @@ export async function recreateMessageTable (db:sqlite3.Database, queueName:strin
 }
 
 export async function insertMessages (db:sqlite3.Database, queueName:string, messages:AWS.SQS.Message[]):Promise<number> {
-  const tableName = getTableName(queueName)
+  const tableName = common.getTableName(queueName)
   let sql = `insert or ignore into ${tableName} values `
   let params = []
   for (let i=0; i<messages.length; i++) {
     sql += '(?,?,?,?,?,?,?,?,?,?,?),'
     let m = messages[i]
     params.push(
-      m.MessageId, m.ReceiptHandle, m.MD5OfBody, m.Body, convertTs(m.Attributes['SentTimestamp']),
-      m.Attributes['SenderId'], m.Attributes['ApproximateReceiveCount'], convertTs(m.Attributes['ApproximateFirstReceiveTimestamp']),
+      m.MessageId, m.ReceiptHandle, m.MD5OfBody, m.Body, common.convertTs(m.Attributes['SentTimestamp']),
+      m.Attributes['SenderId'], m.Attributes['ApproximateReceiveCount'], common.convertTs(m.Attributes['ApproximateFirstReceiveTimestamp']),
       m.Attributes['MessageGroupId'], m.Attributes['MessageDeduplicationId'], m.Attributes['SequenceNumber']
     )
   }
@@ -84,7 +74,7 @@ export async function insertMessages (db:sqlite3.Database, queueName:string, mes
 }
 
 export async function getAllReceiptHandles (sqs:AWS.SQS, db:sqlite3.Database, queueName:string):Promise<string[]> {
-  const tableName = getTableName(queueName)
+  const tableName = common.getTableName(queueName)
   let p1 = new Promise<string[]>((resolve, reject) => {
     db.all(`select receipt_handle from ${tableName}`, (err, rows) => {
       if (err) return reject(err)
@@ -97,7 +87,7 @@ export async function getAllReceiptHandles (sqs:AWS.SQS, db:sqlite3.Database, qu
 
 // WARN: if the message current is not inflight, changing the timeout will receive error 400
 export async function resetAllTimeout (sqs:AWS.SQS, db:sqlite3.Database, queueName:string, queueUrl?:string):Promise<number> {
-  const tableName = getTableName(queueName)
+  const tableName = common.getTableName(queueName)
   let exists = await tableExists(db, queueName)
   let result = 0
   if (exists) {
