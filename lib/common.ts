@@ -51,6 +51,11 @@ export function convertTs (ts:string):string {
   return ds.substring(0,10) + ' ' + ds.substring(11, ds.length-1)
 }
 
+export function getDateString (d:Date):string {
+  let ds = d.toISOString()
+  return ds.substring(0,10) + ' ' + ds.substring(11, ds.length-1)
+}
+
 export async function deleteQueue (sqs:AWS.SQS, queueName:string):Promise<any> {
   let queueUrl = await getQueueUrl(sqs, queueName)
   if (queueUrl) {

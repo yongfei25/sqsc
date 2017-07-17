@@ -10,8 +10,8 @@ export interface ListParams {
 }
 
 export interface ListItem {
-  body:string,
   timestamp:Date,
+  body:string,
   sequenceNum:string
 }
 
