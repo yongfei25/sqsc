@@ -1,13 +1,25 @@
 import * as AWS from 'aws-sdk'
+import * as ini from 'ini'
+import * as fs from 'fs'
+import * as os from 'os'
+import * as path from 'path'
 
 export function getSQS (env?:string) {
   if (env && env === 'test') {
     return new AWS.SQS({
       region: 'us-east-1',
-      endpoint: 'http://0.0.0.0:4576'
+      endpoint: 'http://0.0.0.0:4576',
+      apiVersion: '2012-11-05'
     })
   } else {
-    return new AWS.SQS()
+    const configPath = path.join(os.homedir(), '.aws', 'config')
+    const profile = process.env.AWS_PROFILE || 'default'
+    const config = ini.parse(fs.readFileSync(configPath, 'utf-8'))
+    const region = config[`profile ${profile}`] ? config[`profile ${profile}`].region : 'us-east-1'
+    return new AWS.SQS({
+      apiVersion: '2012-11-05',
+      region: region
+    })
   }
 }
 
