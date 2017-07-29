@@ -6,9 +6,10 @@ interface ListQueueParam {
 }
 
 interface ListQueueResult {
-  queueName:string,
-  numOfVisible:number,
-  numOfInvisible:number,
+  queueName:string
+  queueUrl: string
+  numOfVisible:number
+  numOfInvisible:number
   numOfDelayed:number
 }
 
@@ -24,6 +25,7 @@ export async function listQueue (sqs:AWS.SQS, param:ListQueueParam):Promise<List
       }).promise().then((attr:AWS.SQS.Types.GetQueueAttributesResult) => {
         return {
           queueName: url.split('/').pop(),
+          queueUrl: url,
           numOfVisible: parseInt(attr.Attributes['ApproximateNumberOfMessages']),
           numOfInvisible: parseInt(attr.Attributes['ApproximateNumberOfMessagesNotVisible']),
           numOfDelayed: parseInt(attr.Attributes['ApproximateNumberOfMessagesDelayed'])

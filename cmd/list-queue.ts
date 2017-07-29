@@ -4,9 +4,10 @@ import * as common from '../lib/common'
 import { listQueue } from '../lib/list-queue'
 
 interface StatColumn {
-  name:string,
-  visible:number,
-  invisible:number,
+  name:string
+  url:string
+  visible:number
+  invisible:number
   delayed:number
 }
 
@@ -25,7 +26,8 @@ exports.handler = function (argv:yargs.Arguments) {
         name: item.queueName,
         visible: item.numOfVisible,
         invisible: item.numOfInvisible,
-        delayed: item.numOfDelayed
+        delayed: item.numOfDelayed,
+        url: item.queueUrl
       }
     })
     console.log(columnify(cols))
