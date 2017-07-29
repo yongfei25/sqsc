@@ -4,7 +4,8 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as async from 'async'
 import * as common from '../../lib/common'
-import {listMessage} from '../../lib/list-message'
+import { listMessage } from '../../lib/list-message'
+import { copyMessage } from '../../lib/copy-message'
 
 const sqs:AWS.SQS = new AWS.SQS({
   apiVersion: '2012-11-05',
@@ -47,7 +48,7 @@ describe('Common lib', function () {
     const queueUrl = await common.getQueueUrl(sqs, 'TestQueue')
     const timeout = 5
     let count = 0
-    let allMessages = await common.receiveMessage(sqs, { queueUrl, timeout }, (messages) => {
+    let allMessages = await common.receiveMessage(sqs, { queueUrl, timeout }, async (messages) => {
       count += messages.length
       return count < 20
     })
@@ -61,6 +62,24 @@ describe('list-message lib', function () {
   it('Should list all messages', async function () {
     let messages = await listMessage(sqs, { queueName: 'TestQueue' })
     assert.equal(messages.length, 50)
+  })
+})
+
+describe('copy-message lib', function () {
+  before(recreateQueueAndData)
+  after(removeQueues)
+  it('Should return messages copied', async function () {
+    const messages = await copyMessage(sqs, {
+      sourceQueueName: 'TestQueue',
+      targetQueueName: 'TestErrorQueue',
+      timeout: 30
+    })
+    assert.equal(messages.length, 50)
+  })
+  it('should copy messages to target queue', async function () {
+    const queueUrl = await common.getQueueUrl(sqs, 'TestErrorQueue')
+    const numOfMessage = await common.getNumOfMessages(sqs, queueUrl)
+    assert.equal(numOfMessage, 50)
   })
 })
 

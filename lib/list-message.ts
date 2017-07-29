@@ -10,33 +10,25 @@ export interface ListMessageRequest {
   timeout?:number
 }
 
-async function getNumOfMessages (sqs:AWS.SQS, queueUrl:string):Promise<number> {
-  const attributes = await sqs.getQueueAttributes({
-    QueueUrl: queueUrl,
-    AttributeNames: ['ApproximateNumberOfMessages']
-  }).promise()
-  const numOfMessages:number = attributes.Attributes ? parseInt(attributes.Attributes.ApproximateNumberOfMessages) : Number.MAX_SAFE_INTEGER;
-  return numOfMessages
-}
-
 export async function listMessage (sqs:AWS.SQS, param:ListMessageRequest):Promise<AWS.SQS.Message[]> {
   const queueUrl:string|null = await common.getQueueUrl(sqs, param.queueName)
   if (!queueUrl) {
     return Promise.resolve([])
   }
-  const numOfMessages:number = await getNumOfMessages(sqs, queueUrl)
+  const numOfMessages:number = await common.getNumOfMessages(sqs, queueUrl)
   if (numOfMessages < 1) {
     return Promise.resolve([])
   }
   param.limit = param.limit || Number.MAX_SAFE_INTEGER
   let count = 0
   let printCount = 0
-  const allMessages = await common.receiveMessage(sqs, { queueUrl, timeout: param.timeout || 30 }, (messages) => {
-    count += messages.length
+  let receiveParam = { queueUrl: queueUrl, timeout: param.timeout }
+  const allMessages = await common.receiveMessage(sqs, receiveParam, async (messages, numReceived) => {
+    count = numReceived
     if (param.print) {
       printCount += print(messages, Math.min(param.limit, param.limit - printCount), param.timestamp)
     }
-    const shouldContinue = count < param.limit && count < numOfMessages
+    const shouldContinue = count < param.limit
     return shouldContinue
   })
   return Promise.resolve(allMessages)

@@ -10,7 +10,7 @@ interface ReceiveMessageRequest {
   timeout:number
 }
 interface ReceiveMessageProgress {
-  (messages:AWS.SQS.Message[]):boolean
+  (messages:AWS.SQS.Message[], numReceived:number):Promise<boolean>
 }
 interface MessageMap {
   [index:string]:boolean
@@ -21,7 +21,7 @@ export class MessageDeduplicator {
   constructor() {
     this.messageIds = {}
   }
-  addIfNotExist (messageId:string) {
+  addIfNotExist (messageId:string):boolean {
     if (!this.messageIds[messageId]) {
       this.messageIds[messageId] = true
       return true
@@ -151,13 +151,28 @@ export async function changeTimeout (sqs:AWS.SQS, queueUrl:string, receiptHandle
   }
 }
 
+export async function getNumOfMessages (sqs:AWS.SQS, queueUrl:string):Promise<number> {
+  const attributes = await sqs.getQueueAttributes({
+    QueueUrl: queueUrl,
+    AttributeNames: ['ApproximateNumberOfMessages']
+  }).promise()
+  const numOfMessages:number = attributes.Attributes ? parseInt(attributes.Attributes.ApproximateNumberOfMessages) : Number.MAX_SAFE_INTEGER;
+  return numOfMessages
+}
+
 // Receive messages from SQS, perform deduplication with message ID
 // Reset timeout at the end of function
+// The loop continues until it received all messages in the queue, or progress returns false
 export async function receiveMessage (sqs:AWS.SQS, param:ReceiveMessageRequest, progress:ReceiveMessageProgress):Promise<AWS.SQS.Message[]> {
+  const numOfMessages:number = await getNumOfMessages(sqs, param.queueUrl)
+  if (numOfMessages < 1) {
+    return Promise.resolve([])
+  }
   const deduplicator = new MessageDeduplicator()
+  let count = 0
   let allMessages = []
   let shouldContinue = true
-  while (shouldContinue) {
+  while (shouldContinue && count < numOfMessages) {
     let data = await sqs.receiveMessage({
       QueueUrl: param.queueUrl,
       MaxNumberOfMessages: 10,
@@ -171,9 +186,10 @@ export async function receiveMessage (sqs:AWS.SQS, param:ReceiveMessageRequest, 
         if (deduplicator.addIfNotExist(message.MessageId)) {
           messages.push(message)
           allMessages.push(message)
+          count += 1
         }
       })
-      shouldContinue = progress(messages)
+      shouldContinue = await progress(messages, count)
     }
   }
   // Reset all visibility timeouts
