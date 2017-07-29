@@ -9,6 +9,6 @@ docker-compose up -d
 TMPDIR=/private$TMPDIR docker-compose up -d
 
 # Populating queues and messages for Development
-export SQSC_NODE_ENV=test
+export LOCALSTACK=1
 bin/populate-dev.js
 ```

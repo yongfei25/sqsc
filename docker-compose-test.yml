@@ -1,12 +1,12 @@
 version: '2.1'
 
 services:
-  localstack:
+  localstack_test:
     image: localstack/localstack
     ports:
-      - "5576:5576"
+      - "4476:4476"
     environment:
-      - SERVICES=sqs:5576
+      - SERVICES=sqs:4476
       - DEBUG=${DEBUG- }
       - DATA_DIR=${DATA_DIR- }
       - DOCKER_HOST=unix:///var/run/docker.sock

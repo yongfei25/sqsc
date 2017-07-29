@@ -4,8 +4,8 @@ import * as columnify from 'columnify'
 import * as common from '../lib/common'
 import * as list from '../lib/list'
 
-exports.command = 'ls'
-exports.desc = 'List all messages'
+exports.command = 'query <queue-name>'
+exports.desc = 'Query for messages'
 exports.builder = function (yargs:yargs.Argv) {
   yargs
     .demand(['queue'])

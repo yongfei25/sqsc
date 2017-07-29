@@ -1,6 +1,6 @@
 import * as AWS from 'aws-sdk'
 import * as columnify from 'columnify'
-import {getQueueUrl} from './common'
+import * as common from './common'
 
 export interface ListMessageRequest {
   limit?:number,
@@ -10,19 +10,46 @@ export interface ListMessageRequest {
   timeout?:number
 }
 
-export async function listMessage (sqs:AWS.SQS, param:ListMessageRequest):Promise<AWS.SQS.Message[]> {
-  let queueUrl:string|null = await getQueueUrl(sqs, param.queueName)
-  let count:number = 0
-  let messages:AWS.SQS.Message[] = []
-  if (!queueUrl) {
-    return Promise.resolve(messages)
+interface MessageMap {
+  [index:string]:boolean
+}
+
+class MessageDeduplicator {
+  messageIds:MessageMap
+  constructor() {
+    this.messageIds = {}
   }
-  let attributes = await sqs.getQueueAttributes({
+  addIfNotExist (messageId:string) {
+    if (!this.messageIds[messageId]) {
+      this.messageIds[messageId] = true
+      return true
+    } else {
+      return false
+    }
+  }
+}
+
+async function getNumOfMessages (sqs:AWS.SQS, queueUrl:string):Promise<number> {
+  const attributes = await sqs.getQueueAttributes({
     QueueUrl: queueUrl,
     AttributeNames: ['ApproximateNumberOfMessages']
   }).promise()
+  const numOfMessages:number = attributes.Attributes ? parseInt(attributes.Attributes.ApproximateNumberOfMessages) : Number.MAX_SAFE_INTEGER;
+  return numOfMessages
+}
 
-  let numOfMessages:number = attributes.Attributes ? parseInt(attributes.Attributes.ApproximateNumberOfMessages) : Number.MAX_SAFE_INTEGER;
+export async function listMessage (sqs:AWS.SQS, param:ListMessageRequest):Promise<AWS.SQS.Message[]> {
+  const queueUrl:string|null = await common.getQueueUrl(sqs, param.queueName)
+  if (!queueUrl) {
+    return Promise.resolve([])
+  }
+  const numOfMessages:number = await getNumOfMessages(sqs, queueUrl)
+  if (numOfMessages < 1) {
+    return Promise.resolve([])
+  }
+  const deduplicator = new MessageDeduplicator()
+  let count = 0
+  let messages:AWS.SQS.Message[] = []
   let printCount = 0
   param.limit = param.limit || Number.MAX_SAFE_INTEGER
   while (count < param.limit && count < numOfMessages) {
@@ -30,16 +57,27 @@ export async function listMessage (sqs:AWS.SQS, param:ListMessageRequest):Promis
       QueueUrl: queueUrl,
       MaxNumberOfMessages: 10,
       WaitTimeSeconds: 0,
-      VisibilityTimeout: param.timeout || 5,
+      VisibilityTimeout: param.timeout || 30,
       AttributeNames: ['All']
     }).promise()
     if (data.Messages) {
-      count += data.Messages.length
-      messages = messages.concat(data.Messages)
+      data.Messages.forEach((message) => {
+        if (deduplicator.addIfNotExist(message.MessageId)) {
+          count +=1
+          messages.push(message)
+        }
+      })
       if (param.print) {
         printCount += print(data.Messages, Math.min(param.limit, param.limit - printCount), param.timestamp)
       }
     }
+  }
+  // Reset all visibility timeouts
+  const receiptHandles = messages.map(m => m.ReceiptHandle)
+  try {
+    await common.changeTimeout(sqs, queueUrl, receiptHandles, 1)
+  } catch (err) {
+    console.error(err)
   }
   return Promise.resolve(messages)
 }

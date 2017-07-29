@@ -13,7 +13,7 @@ describe('List API', function () {
   const sqs:AWS.SQS = new AWS.SQS({
     apiVersion: '2012-11-05',
     region: 'us-east-1',
-    endpoint: 'http://0.0.0.0:5576'
+    endpoint: 'http://0.0.0.0:4476'
   })
   let totalMessages = 50
 
