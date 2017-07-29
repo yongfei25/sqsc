@@ -10,10 +10,10 @@ import {listMessage} from '../../lib/list-message'
 describe('Pull API', function () {
   const dbPath = path.join(__dirname, '../temp/testdb')
   let db:sqlite3.Database
-  let sqs:AWS.SQS = new AWS.SQS({
+  const sqs:AWS.SQS = new AWS.SQS({
     apiVersion: '2012-11-05',
     region: 'us-east-1',
-    endpoint: 'http://0.0.0.0:4576'
+    endpoint: 'http://0.0.0.0:5576'
   })
   let totalMessages = 50
 

@@ -1,0 +1,15 @@
+version: '2.1'
+
+services:
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "5576:5576"
+    environment:
+      - SERVICES=sqs:5576
+      - DEBUG=${DEBUG- }
+      - DATA_DIR=${DATA_DIR- }
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"

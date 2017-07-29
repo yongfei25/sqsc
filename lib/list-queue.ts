@@ -1,20 +1,20 @@
 import * as AWS from 'aws-sdk'
 import * as common from './common'
 
-interface GetStatsParam {
+interface ListQueueParam {
   prefix:string
 }
 
-interface GetStatsResult {
+interface ListQueueResult {
   queueName:string,
   numOfVisible:number,
   numOfInvisible:number,
   numOfDelayed:number
 }
 
-export async function getStats (sqs:AWS.SQS, param:GetStatsParam):Promise<GetStatsResult[]> {
+export async function listQueue (sqs:AWS.SQS, param:ListQueueParam):Promise<ListQueueResult[]> {
   let data = await sqs.listQueues({ QueueNamePrefix: param.prefix }).promise()
-  let result:GetStatsResult[] = []
+  let result:ListQueueResult[] = []
 
   if (data.QueueUrls) {
     let promises = data.QueueUrls.map((url:string) => {

@@ -7,9 +7,9 @@
         "sqsc": "bin/index.js"
     },
     "scripts": {
-        "pretest": "docker-compose --project-name sqsc_test up --force-recreate -d && sleep 2",
+        "pretest": "docker-compose -f docker-compose-test.yml --project-name sqsc_test up --force-recreate -d && sleep 2",
         "test": "tsc -p . && NODE_ENV=test LOCALSTACK=1 mocha tests/unit",
-        "posttest": "docker-compose --project-name sqsc_test down"
+        "posttest": "docker-compose -f docker-compose-test.yml --project-name sqsc_test down"
     },
     "keywords": [],
     "author": "",

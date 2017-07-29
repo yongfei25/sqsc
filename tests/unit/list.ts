@@ -10,7 +10,11 @@ import * as pull from '../../lib/pull'
 describe('List API', function () {
   const dbPath = path.join(__dirname, '../temp/testdb')
   let db:sqlite3.Database
-  let sqs:AWS.SQS = common.getLocalSQS()
+  const sqs:AWS.SQS = new AWS.SQS({
+    apiVersion: '2012-11-05',
+    region: 'us-east-1',
+    endpoint: 'http://0.0.0.0:5576'
+  })
   let totalMessages = 50
 
   before(async function () {

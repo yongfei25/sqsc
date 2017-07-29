@@ -7,7 +7,11 @@ import * as common from '../../lib/common'
 import {listMessage} from '../../lib/list-message'
 
 describe('Basic command tests', function () {
-  const sqs:AWS.SQS = common.getLocalSQS()
+  const sqs:AWS.SQS = new AWS.SQS({
+    apiVersion: '2012-11-05',
+    region: 'us-east-1',
+    endpoint: 'http://0.0.0.0:5576'
+  })
 
   before(async function () {
     try {

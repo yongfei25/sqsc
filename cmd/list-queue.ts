@@ -1,8 +1,7 @@
 import * as yargs from 'yargs'
 import * as columnify from 'columnify'
 import * as common from '../lib/common'
-import {listMessage} from '../lib/list-message'
-import {getStats} from '../lib/get-stats'
+import { listQueue } from '../lib/list-queue'
 
 interface StatColumn {
   name:string,
@@ -11,17 +10,16 @@ interface StatColumn {
   delayed:number
 }
 
-exports.command = 'stat'
-exports.desc = 'Display common stats for queues'
+exports.command = 'lq [prefix]'
+exports.desc = 'List the queues'
 exports.builder = function (yargs:yargs.Argv) {
   yargs
-    .demand(['prefix'])
     .describe('prefix', 'Queue name prefix')
   return yargs
 }
 exports.handler = function (argv:yargs.Arguments) {
   let sqs:AWS.SQS = common.getSQS()
-  getStats(sqs, argv.prefix).then((result) => {
+  listQueue(sqs, { prefix: argv.prefix }).then((result) => {
     let cols:StatColumn[] = result.map((item) => {
       return {
         name: item.queueName,
