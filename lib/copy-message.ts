@@ -7,17 +7,19 @@ interface CopyMessageRequest {
   timeout:number
 }
 
-export async function copyMessage(sqs:AWS.SQS, param:CopyMessageRequest):Promise<AWS.SQS.Message[]> {
+interface CopyMessageProgress {
+  (messages:AWS.SQS.Message[]):void
+}
+
+export async function copyMessage(sqs:AWS.SQS, param:CopyMessageRequest, progress?:CopyMessageProgress):Promise<AWS.SQS.Message[]> {
   let [sourceQueueUrl, targetQueueUrl] = await Promise.all([
     common.getQueueUrl(sqs, param.sourceQueueName),
     common.getQueueUrl(sqs, param.targetQueueName)
   ])
   if (!sourceQueueUrl) {
-    console.error(`Queue ${param.sourceQueueName} does not exists.`)
-    return
+    throw new Error(`Queue ${param.sourceQueueName} does not exists.`)
   } else if (!targetQueueUrl) {
-    console.error(`Queue ${param.targetQueueName} does not exists.`)
-    return
+    throw new Error(`Queue ${param.targetQueueName} does not exists.`)
   }
   let receiveParam = { queueUrl: sourceQueueUrl, timeout: param.timeout }
   let allMessages = await common.receiveMessage(sqs, receiveParam, async function (messages, numReceived) {
@@ -29,6 +31,9 @@ export async function copyMessage(sqs:AWS.SQS, param:CopyMessageRequest):Promise
       }
     })
     await sqs.sendMessageBatch({ Entries: entries, QueueUrl: targetQueueUrl }).promise()
+    if (progress) {
+      await progress(messages)
+    }
     return true
   })
   return allMessages

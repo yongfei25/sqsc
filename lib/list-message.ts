@@ -13,7 +13,7 @@ export interface ListMessageRequest {
 export async function listMessage (sqs:AWS.SQS, param:ListMessageRequest):Promise<AWS.SQS.Message[]> {
   const queueUrl:string|null = await common.getQueueUrl(sqs, param.queueName)
   if (!queueUrl) {
-    return Promise.resolve([])
+    throw new Error(`Queue ${param.queueName} does not exists.`)
   }
   const numOfMessages:number = await common.getNumOfMessages(sqs, queueUrl)
   if (numOfMessages < 1) {
