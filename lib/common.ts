@@ -10,7 +10,12 @@ export function getRegionOrDefault(defRegion:string):string {
     const configPath = path.join(os.homedir(), '.aws', 'config')
     const profile = process.env.AWS_PROFILE || 'default'
     const config = ini.parse(fs.readFileSync(configPath, 'utf-8'))
-    const region = config[`profile ${profile}`] ? config[`profile ${profile}`].region : defRegion
+    let region = defRegion
+    if (config[`profile ${profile}`]) {
+      region = config[`profile ${profile}`].region
+    } else if (config[profile]) {
+      region = config[profile].region
+    }
     return region
   } catch (err) {
     return defRegion
