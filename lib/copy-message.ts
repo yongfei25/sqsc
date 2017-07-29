@@ -4,7 +4,8 @@ import * as common from './common'
 interface CopyMessageRequest {
   sourceQueueName:string
   targetQueueName:string
-  timeout:number
+  timeout:number,
+  move?:boolean
 }
 
 interface CopyMessageProgress {
@@ -21,7 +22,12 @@ export async function copyMessage(sqs:AWS.SQS, param:CopyMessageRequest, progres
   } else if (!targetQueueUrl) {
     throw new Error(`Queue ${param.targetQueueName} does not exists.`)
   }
-  let receiveParam = { queueUrl: sourceQueueUrl, timeout: param.timeout }
+  let receiveParam = {
+    queueUrl: sourceQueueUrl,
+    timeout: param.timeout,
+    // Existing message will moved so no need to reset timeout
+    resetTimeout: !param.move
+  }
   let allMessages = await common.receiveMessage(sqs, receiveParam, async function (messages, numReceived) {
     const entries = messages.map(message => {
       return {
@@ -31,6 +37,18 @@ export async function copyMessage(sqs:AWS.SQS, param:CopyMessageRequest, progres
       }
     })
     await sqs.sendMessageBatch({ Entries: entries, QueueUrl: targetQueueUrl }).promise()
+    if (param.move) {
+      const rmEntries = messages.map(message => {
+        return {
+          Id: message.MessageId,
+          ReceiptHandle: message.ReceiptHandle
+        }
+      })
+      await sqs.deleteMessageBatch({
+        QueueUrl: sourceQueueUrl,
+        Entries: rmEntries
+      }).promise()
+    }
     if (progress) {
       await progress(messages)
     }

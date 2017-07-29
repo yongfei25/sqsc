@@ -22,7 +22,7 @@ export async function listMessage (sqs:AWS.SQS, param:ListMessageRequest):Promis
   param.limit = param.limit || Number.MAX_SAFE_INTEGER
   let count = 0
   let printCount = 0
-  let receiveParam = { queueUrl: queueUrl, timeout: param.timeout }
+  let receiveParam = { queueUrl: queueUrl, timeout: param.timeout, resetTimeout: true }
   const allMessages = await common.receiveMessage(sqs, receiveParam, async (messages, numReceived) => {
     count = numReceived
     if (param.print) {

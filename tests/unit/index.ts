@@ -56,7 +56,7 @@ describe('Common lib', function () {
   })
 })
 
-describe('list-message lib', function () {
+describe('list-message', function () {
   before(recreateQueueAndData)
   after(removeQueues)
   it('Should list all messages', async function () {
@@ -65,7 +65,7 @@ describe('list-message lib', function () {
   })
 })
 
-describe('copy-message lib', function () {
+describe('copy-message', function () {
   before(recreateQueueAndData)
   after(removeQueues)
   it('Should return messages copied', async function () {
@@ -80,6 +80,27 @@ describe('copy-message lib', function () {
     const queueUrl = await common.getQueueUrl(sqs, 'TestErrorQueue')
     const numOfMessage = await common.getNumOfMessages(sqs, queueUrl)
     assert.equal(numOfMessage, 50)
+  })
+})
+
+describe('move-message', function () {
+  before(recreateQueueAndData)
+  after(removeQueues)
+  it('should moves messages to target queue', async function () {
+    const messages = await copyMessage(sqs, {
+      sourceQueueName: 'TestQueue',
+      targetQueueName: 'TestErrorQueue',
+      timeout: 30,
+      move: true
+    })
+    let queueUrl = await common.getQueueUrl(sqs, 'TestErrorQueue')
+    let numOfMessage = await common.getNumOfMessages(sqs, queueUrl)
+    assert.equal(numOfMessage, 50)
+  })
+  it('should not have any messages in source queue', async function () {
+    let queueUrl = await common.getQueueUrl(sqs, 'TestQueue')
+    let numOfMessage = await common.getNumOfMessages(sqs, queueUrl)
+    assert.equal(numOfMessage, 0)
   })
 })
 

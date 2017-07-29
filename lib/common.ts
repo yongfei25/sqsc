@@ -8,6 +8,7 @@ import * as sqlite3 from 'sqlite3'
 interface ReceiveMessageRequest {
   queueUrl: string
   timeout:number
+  resetTimeout?:boolean
 }
 interface ReceiveMessageProgress {
   (messages:AWS.SQS.Message[], numReceived:number):Promise<boolean>
@@ -193,12 +194,14 @@ export async function receiveMessage (sqs:AWS.SQS, param:ReceiveMessageRequest, 
     }
   }
   // Reset all visibility timeouts
-  const receiptHandles = allMessages.map(m => m.ReceiptHandle)
-  if (receiptHandles.length > 0) {
-    try {
-      await changeTimeout(sqs, param.queueUrl, receiptHandles, 1)
-    } catch (err) {
-      console.error('Error changing visibility timeout', err.message)
+  if (param.resetTimeout) {
+    const receiptHandles = allMessages.map(m => m.ReceiptHandle)
+    if (receiptHandles.length > 0) {
+      try {
+        await changeTimeout(sqs, param.queueUrl, receiptHandles, 1)
+      } catch (err) {
+        console.error('Error changing visibility timeout', err.message)
+      }
     }
   }
   return Promise.resolve(allMessages)
