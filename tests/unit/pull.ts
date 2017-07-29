@@ -10,7 +10,11 @@ import {listMessage} from '../../lib/list-message'
 describe('Pull API', function () {
   const dbPath = path.join(__dirname, '../temp/testdb')
   let db:sqlite3.Database
-  let sqs:AWS.SQS
+  let sqs:AWS.SQS = new AWS.SQS({
+    apiVersion: '2012-11-05',
+    region: 'us-east-1',
+    endpoint: 'http://0.0.0.0:4576'
+  })
   let totalMessages = 50
 
   before(async function () {
@@ -22,7 +26,6 @@ describe('Pull API', function () {
     })
 
     // Create queues and populate SQS messages
-    sqs = common.getSQS(process.env.SQSC_NODE_ENV)
     let result = await Promise.all([
       common.recreateQueue(sqs, 'TestQueue'),
       common.recreateQueue(sqs, 'TestErrorQueue')
@@ -35,6 +38,7 @@ describe('Pull API', function () {
       return sqs.sendMessage({ MessageBody: msg, QueueUrl: queueUrls[0] }).promise()
     })
     let send = await Promise.all(promises)
+    return send
   })
   after(async function () {
     await new Promise((resolve, reject) => {
@@ -48,6 +52,7 @@ describe('Pull API', function () {
       common.deleteQueue(sqs, 'TestQueue'),
       common.deleteQueue(sqs, 'TestErrorQueue')
     ])
+    return result
   })
 
   it('should create table for queue', async function () {
@@ -58,8 +63,14 @@ describe('Pull API', function () {
     })
   })
   it('should pull messages and store in sqlite', async function () {
-    let totalInserted = await pull.pull(sqs, db, { queueName: 'TestQueue' })
-    assert.equal(totalInserted, totalMessages)
+    try {
+      let totalInserted = await pull.pull(sqs, db, { queueName: 'TestQueue' })
+      console.log(totalInserted)
+      assert.equal(totalInserted, totalMessages)
+    } catch (err) {
+      console.log('Failed pulling')
+      throw err
+    }
     db.get('select count(*) count from msg_TestQueue', (err, data) => {
       if (err) return Promise.reject(err)
       assert.equal(data.count, totalMessages)

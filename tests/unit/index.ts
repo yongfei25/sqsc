@@ -7,10 +7,9 @@ import * as common from '../../lib/common'
 import {listMessage} from '../../lib/list-message'
 
 describe('Basic command tests', function () {
-  let sqs:AWS.SQS
+  const sqs:AWS.SQS = common.getLocalSQS()
 
   before(async function () {
-    sqs = common.getSQS('test')
     try {
       // Create queues and populate SQS messages
       console.log('Reseting test queues.')

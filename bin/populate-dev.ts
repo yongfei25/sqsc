@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import {getSQS, recreateQueue} from '../lib/common'
+import * as common from '../lib/common'
 import * as fs from 'fs'
 import * as path from 'path'
 
-let sqs:AWS.SQS = getSQS('test')
+let sqs:AWS.SQS = common.getLocalSQS()
 
 async function populate () {
   try {
@@ -11,8 +11,8 @@ async function populate () {
     console.log('Reseting test queues.')
     let queues = await sqs.listQueues().promise()
     let result = await Promise.all([
-      recreateQueue(sqs, 'DevelopmentQueue'),
-      recreateQueue(sqs, 'DevelopmentErrorQueue')
+      common.recreateQueue(sqs, 'DevelopmentQueue'),
+      common.recreateQueue(sqs, 'DevelopmentErrorQueue')
     ])
     let queueUrls = result.map((x:AWS.SQS.CreateQueueResult) => x.QueueUrl)
     // populate messages

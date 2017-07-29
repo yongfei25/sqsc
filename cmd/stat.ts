@@ -20,7 +20,7 @@ exports.builder = function (yargs:yargs.Argv) {
   return yargs
 }
 exports.handler = function (argv:yargs.Arguments) {
-  let sqs:AWS.SQS = common.getSQS(process.env.SQSC_NODE_ENV)
+  let sqs:AWS.SQS = common.getSQS()
   getStats(sqs, argv.prefix).then((result) => {
     let cols:StatColumn[] = result.map((item) => {
       return {

@@ -10,7 +10,7 @@ import * as pull from '../../lib/pull'
 describe('List API', function () {
   const dbPath = path.join(__dirname, '../temp/testdb')
   let db:sqlite3.Database
-  let sqs:AWS.SQS
+  let sqs:AWS.SQS = common.getLocalSQS()
   let totalMessages = 50
 
   before(async function () {
@@ -21,7 +21,6 @@ describe('List API', function () {
     })
 
     // Create queues and populate SQS messages
-    sqs = common.getSQS(process.env.SQSC_NODE_ENV)
     let result = await Promise.all([
       common.recreateQueue(sqs, 'TestQueue'),
       common.recreateQueue(sqs, 'TestErrorQueue')
@@ -34,6 +33,7 @@ describe('List API', function () {
     })
     let send = await Promise.all(promises)
     let totalInserted = await pull.pull(sqs, db, { queueName: 'TestQueue' })
+    return totalInserted
   })
   after(async function () {
     await new Promise((resolve, reject) => {
@@ -46,6 +46,7 @@ describe('List API', function () {
       common.deleteQueue(sqs, 'TestQueue'),
       common.deleteQueue(sqs, 'TestErrorQueue')
     ])
+    return result
   })
 
   it('should list messages', async function () {

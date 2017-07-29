@@ -14,7 +14,7 @@ exports.builder = function (yargs:yargs.Argv) {
   return yargs
 }
 exports.handler = async function (argv:yargs.Arguments) {
-  let sqs = common.getSQS(process.env.SQSC_NODE_ENV)
+  let sqs = common.getSQS()
   let db = await common.getDb()
   let param = { queueName: argv.queueName }
   let spinner = ora('Pulling SQS messages').start()
