@@ -10,25 +10,6 @@ export interface ListMessageRequest {
   timeout?:number
 }
 
-interface MessageMap {
-  [index:string]:boolean
-}
-
-class MessageDeduplicator {
-  messageIds:MessageMap
-  constructor() {
-    this.messageIds = {}
-  }
-  addIfNotExist (messageId:string) {
-    if (!this.messageIds[messageId]) {
-      this.messageIds[messageId] = true
-      return true
-    } else {
-      return false
-    }
-  }
-}
-
 async function getNumOfMessages (sqs:AWS.SQS, queueUrl:string):Promise<number> {
   const attributes = await sqs.getQueueAttributes({
     QueueUrl: queueUrl,
@@ -47,7 +28,7 @@ export async function listMessage (sqs:AWS.SQS, param:ListMessageRequest):Promis
   if (numOfMessages < 1) {
     return Promise.resolve([])
   }
-  const deduplicator = new MessageDeduplicator()
+  const deduplicator = new common.MessageDeduplicator()
   let count = 0
   let messages:AWS.SQS.Message[] = []
   let printCount = 0

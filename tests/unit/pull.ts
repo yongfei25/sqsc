@@ -65,7 +65,6 @@ describe('Pull API', function () {
   it('should pull messages and store in sqlite', async function () {
     try {
       let totalInserted = await pull.pull(sqs, db, { queueName: 'TestQueue' })
-      console.log(totalInserted)
       assert.equal(totalInserted, totalMessages)
     } catch (err) {
       console.log('Failed pulling')

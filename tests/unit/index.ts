@@ -49,3 +49,17 @@ describe('Basic command tests', function () {
     assert.equal(messages.length, 50)
   })
 })
+
+describe('MessageDeduplicator', function () {
+  const deduplicator = new common.MessageDeduplicator()
+  it('should add message', function () {
+    const ret = deduplicator.addIfNotExist('firstMessage')
+    assert.equal(ret, true)
+    assert.equal(deduplicator.messageIds['firstMessage'], true)
+  })
+  it('should not add duplicated message', function () {
+    const ret = deduplicator.addIfNotExist('firstMessage')
+    assert.equal(ret, false)
+    assert.equal(deduplicator.messageIds['firstMessage'], true)
+  })
+})

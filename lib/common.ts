@@ -5,6 +5,25 @@ import * as os from 'os'
 import * as path from 'path'
 import * as sqlite3 from 'sqlite3'
 
+interface MessageMap {
+  [index:string]:boolean
+}
+
+export class MessageDeduplicator {
+  messageIds:MessageMap
+  constructor() {
+    this.messageIds = {}
+  }
+  addIfNotExist (messageId:string) {
+    if (!this.messageIds[messageId]) {
+      this.messageIds[messageId] = true
+      return true
+    } else {
+      return false
+    }
+  }
+}
+
 export function getRegionOrDefault(defRegion:string):string {
   try {
     const configPath = path.join(os.homedir(), '.aws', 'config')
