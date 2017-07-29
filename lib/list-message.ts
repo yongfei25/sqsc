@@ -3,10 +3,10 @@ import * as columnify from 'columnify'
 import * as common from './common'
 
 export interface ListMessageRequest {
-  limit?:number,
-  queueName:string,
-  print?:boolean,
-  timestamp?:boolean,
+  limit?:number
+  queueName:string
+  print?:boolean
+  timestamp?:boolean
   timeout?:number
 }
 
@@ -28,39 +28,18 @@ export async function listMessage (sqs:AWS.SQS, param:ListMessageRequest):Promis
   if (numOfMessages < 1) {
     return Promise.resolve([])
   }
-  const deduplicator = new common.MessageDeduplicator()
-  let count = 0
-  let messages:AWS.SQS.Message[] = []
-  let printCount = 0
   param.limit = param.limit || Number.MAX_SAFE_INTEGER
-  while (count < param.limit && count < numOfMessages) {
-    let data = await sqs.receiveMessage({
-      QueueUrl: queueUrl,
-      MaxNumberOfMessages: 10,
-      WaitTimeSeconds: 0,
-      VisibilityTimeout: param.timeout || 30,
-      AttributeNames: ['All']
-    }).promise()
-    if (data.Messages) {
-      data.Messages.forEach((message) => {
-        if (deduplicator.addIfNotExist(message.MessageId)) {
-          count +=1
-          messages.push(message)
-        }
-      })
-      if (param.print) {
-        printCount += print(data.Messages, Math.min(param.limit, param.limit - printCount), param.timestamp)
-      }
+  let count = 0
+  let printCount = 0
+  const allMessages = await common.receiveMessage(sqs, { queueUrl, timeout: param.timeout || 30 }, (messages) => {
+    count += messages.length
+    if (param.print) {
+      printCount += print(messages, Math.min(param.limit, param.limit - printCount), param.timestamp)
     }
-  }
-  // Reset all visibility timeouts
-  const receiptHandles = messages.map(m => m.ReceiptHandle)
-  try {
-    await common.changeTimeout(sqs, queueUrl, receiptHandles, 1)
-  } catch (err) {
-    console.error(err)
-  }
-  return Promise.resolve(messages)
+    const shouldContinue = count < param.limit && count < numOfMessages
+    return shouldContinue
+  })
+  return Promise.resolve(allMessages)
 }
 
 function print (messages:AWS.SQS.Message[], limit:number, timestamp:boolean = false):number {

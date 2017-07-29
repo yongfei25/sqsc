@@ -5,6 +5,13 @@ import * as os from 'os'
 import * as path from 'path'
 import * as sqlite3 from 'sqlite3'
 
+interface ReceiveMessageRequest {
+  queueUrl: string
+  timeout:number
+}
+interface ReceiveMessageProgress {
+  (messages:AWS.SQS.Message[]):boolean
+}
 interface MessageMap {
   [index:string]:boolean
 }
@@ -142,4 +149,41 @@ export async function changeTimeout (sqs:AWS.SQS, queueUrl:string, receiptHandle
       Entries: entries
     }).promise()
   }
+}
+
+// Receive messages from SQS, perform deduplication with message ID
+// Reset timeout at the end of function
+export async function receiveMessage (sqs:AWS.SQS, param:ReceiveMessageRequest, progress:ReceiveMessageProgress):Promise<AWS.SQS.Message[]> {
+  const deduplicator = new MessageDeduplicator()
+  let allMessages = []
+  let shouldContinue = true
+  while (shouldContinue) {
+    let data = await sqs.receiveMessage({
+      QueueUrl: param.queueUrl,
+      MaxNumberOfMessages: 10,
+      WaitTimeSeconds: 0,
+      VisibilityTimeout: param.timeout,
+      AttributeNames: ['All']
+    }).promise()
+    if (data.Messages) {
+      let messages = []
+      data.Messages.forEach((message) => {
+        if (deduplicator.addIfNotExist(message.MessageId)) {
+          messages.push(message)
+          allMessages.push(message)
+        }
+      })
+      shouldContinue = progress(messages)
+    }
+  }
+  // Reset all visibility timeouts
+  const receiptHandles = allMessages.map(m => m.ReceiptHandle)
+  if (receiptHandles.length > 0) {
+    try {
+      await changeTimeout(sqs, param.queueUrl, receiptHandles, 1)
+    } catch (err) {
+      console.error('Error changing visibility timeout', err.message)
+    }
+  }
+  return Promise.resolve(allMessages)
 }

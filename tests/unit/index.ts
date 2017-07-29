@@ -6,44 +6,58 @@ import * as async from 'async'
 import * as common from '../../lib/common'
 import {listMessage} from '../../lib/list-message'
 
-describe('Basic command tests', function () {
-  const sqs:AWS.SQS = new AWS.SQS({
-    apiVersion: '2012-11-05',
-    region: 'us-east-1',
-    endpoint: 'http://0.0.0.0:4476'
-  })
+const sqs:AWS.SQS = new AWS.SQS({
+  apiVersion: '2012-11-05',
+  region: 'us-east-1',
+  endpoint: 'http://0.0.0.0:4476'
+})
 
-  before(async function () {
-    try {
-      // Create queues and populate SQS messages
-      console.log('Reseting test queues.')
-      let result = await Promise.all([
-        common.recreateQueue(sqs, 'TestQueue'),
-        common.recreateQueue(sqs, 'TestErrorQueue')
-      ])
-      let queueUrls = result.map((x:AWS.SQS.CreateQueueResult) => x.QueueUrl)
-      // populate messages
-      console.log('Populating SQS messages.')
-      let messages:string[] = fs.readFileSync(path.join(__dirname, '../fixtures/messages')).toString().split('\n')
-      let promises = messages.map((msg:string) => {
-        return sqs.sendMessage({ MessageBody: msg, QueueUrl: queueUrls[0] }).promise()
-      })
-      let send = await Promise.all(promises)
-    } catch (e) {
-      console.error(e)
-      throw e
-    }
-  })
-
-  after(async function () {
-    console.log('Deleting queues')
-    let queues = await sqs.listQueues().promise()
+async function recreateQueueAndData () {
+  try {
+    // Create queues and populate SQS messages
     let result = await Promise.all([
-      common.deleteQueue(sqs, 'TestQueue'),
-      common.deleteQueue(sqs, 'TestErrorQueue')
+      common.recreateQueue(sqs, 'TestQueue'),
+      common.recreateQueue(sqs, 'TestErrorQueue')
     ])
-  })
+    let queueUrls = result.map((x:AWS.SQS.CreateQueueResult) => x.QueueUrl)
+    // populate messages
+    let messages:string[] = fs.readFileSync(path.join(__dirname, '../fixtures/messages')).toString().split('\n')
+    let promises = messages.map((msg:string) => {
+      return sqs.sendMessage({ MessageBody: msg, QueueUrl: queueUrls[0] }).promise()
+    })
+    let send = await Promise.all(promises)
+  } catch (e) {
+    console.error(e)
+    throw e
+  }
+}
 
+async function removeQueues () {
+  let queues = await sqs.listQueues().promise()
+  let result = await Promise.all([
+    common.deleteQueue(sqs, 'TestQueue'),
+    common.deleteQueue(sqs, 'TestErrorQueue')
+  ])
+}
+
+describe('Common lib', function () {
+  before(recreateQueueAndData)
+  after(removeQueues)
+  it('Should receive 20 messages', async function () {
+    const queueUrl = await common.getQueueUrl(sqs, 'TestQueue')
+    const timeout = 5
+    let count = 0
+    let allMessages = await common.receiveMessage(sqs, { queueUrl, timeout }, (messages) => {
+      count += messages.length
+      return count < 20
+    })
+    assert.equal(allMessages.length, 20)
+  })
+})
+
+describe('list-message lib', function () {
+  before(recreateQueueAndData)
+  after(removeQueues)
   it('Should list all messages', async function () {
     let messages = await listMessage(sqs, { queueName: 'TestQueue' })
     assert.equal(messages.length, 50)
