@@ -31,8 +31,7 @@
         "mocha": "^3.4.2",
         "standard": "^10.0.2",
         "typescript": "^2.4.1",
-        "typescript-eslint-parser": "^3.0.0",
-        "sqlite3": "^3.1.8"
+        "typescript-eslint-parser": "^3.0.0"
     },
     "dependencies": {
         "async": "^2.5.0",
@@ -40,6 +39,7 @@
         "columnify": "^1.5.4",
         "ini": "^1.3.4",
         "ora": "^1.3.0",
-        "yargs": "^8.0.2"
+        "yargs": "^8.0.2",
+        "sqlite3": "^3.1.8"
     }
 }

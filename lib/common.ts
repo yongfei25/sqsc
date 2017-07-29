@@ -117,15 +117,14 @@ export async function getQueueUrl (sqs:AWS.SQS, queueName:string):Promise<string
 }
 
 export async function getQueueAttributes (sqs:AWS.SQS, queueName:string):Promise<AWS.SQS.Types.GetQueueAttributesResult> {
-  let data = await sqs.getQueueUrl({ QueueName: queueName }).promise()
-  if (!data.QueueUrl) {
-    throw new Error(`QueueUrl does not exists for ${queueName}`)
-  } else {
-    return sqs.getQueueAttributes({
-      QueueUrl: data.QueueUrl,
-      AttributeNames: ['All']
-    }).promise()
+  const queueUrl:string|null = await getQueueUrl(sqs, queueName)
+  if (!queueUrl) {
+    throw new Error(`Queue ${queueName} does not exists.`)
   }
+  return sqs.getQueueAttributes({
+    QueueUrl: queueUrl,
+    AttributeNames: ['All']
+  }).promise()
 }
 
 export async function changeTimeout (sqs:AWS.SQS, queueUrl:string, receiptHandles:string[], timeout:number)
