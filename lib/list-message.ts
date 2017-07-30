@@ -23,7 +23,9 @@ export async function listMessage (sqs:AWS.SQS, param:ListMessageRequest):Promis
   let receiveParam = { queueUrl: queueUrl, timeout: param.timeout, resetTimeout: true }
   let allMessages = []
   await common.receiveMessage(sqs, receiveParam, async (messages, numReceived) => {
-    messages = messages.slice(0, Math.min(Math.abs(numReceived-param.limit), messages.length))
+    if (numReceived > param.limit) {
+      messages = messages.slice(0, Math.min(Math.abs(numReceived-param.limit), messages.length))
+    }
     allMessages = allMessages.concat(messages)
     if (param.print) {
       print(messages, param.timestamp)
