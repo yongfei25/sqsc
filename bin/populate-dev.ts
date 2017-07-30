@@ -12,7 +12,9 @@ async function populate () {
     let queues = await sqs.listQueues().promise()
     let result = await Promise.all([
       common.recreateQueue(sqs, 'DevelopmentQueue'),
-      common.recreateQueue(sqs, 'DevelopmentErrorQueue')
+      common.recreateQueue(sqs, 'DevelopmentErrorQueue'),
+      common.recreateQueue(sqs, 'CustomerQueue'),
+      common.recreateQueue(sqs, 'CustomerErrorQueue')
     ])
     let queueUrls = result.map((x:AWS.SQS.CreateQueueResult) => x.QueueUrl)
     // populate messages
