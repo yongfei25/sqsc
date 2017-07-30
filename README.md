@@ -1,5 +1,6 @@
 # sqsc
-[![Build Status](https://travis-ci.org/yongfei25/s3events.svg?branch=master)](https://travis-ci.org/yongfei25/sqsc) 
+[![npm version](https://badge.fury.io/js/sqsc.svg)](https://badge.fury.io/js/sqsc)
+[![Build Status](https://travis-ci.org/yongfei25/sqsc.svg?branch=master)](https://travis-ci.org/yongfei25/sqsc) 
 
 `sqsc` is a command line tool for interacting with AWS SQS queues.
 
