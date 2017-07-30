@@ -20,26 +20,24 @@ export async function listMessage (sqs:AWS.SQS, param:ListMessageRequest):Promis
     return Promise.resolve([])
   }
   param.limit = param.limit || Number.MAX_SAFE_INTEGER
-  let count = 0
-  let printCount = 0
   let receiveParam = { queueUrl: queueUrl, timeout: param.timeout, resetTimeout: true }
-  const allMessages = await common.receiveMessage(sqs, receiveParam, async (messages, numReceived) => {
-    count = numReceived
+  let allMessages = []
+  await common.receiveMessage(sqs, receiveParam, async (messages, numReceived) => {
+    messages = messages.slice(0, Math.min(Math.abs(numReceived-param.limit), messages.length))
+    allMessages = allMessages.concat(messages)
     if (param.print) {
-      printCount += print(messages, Math.min(param.limit, param.limit - printCount), param.timestamp)
+      print(messages, param.timestamp)
     }
-    const shouldContinue = count < param.limit
+    const shouldContinue = numReceived < param.limit
     return shouldContinue
   })
   return Promise.resolve(allMessages)
 }
 
-function print (messages:AWS.SQS.Message[], limit:number, timestamp:boolean = false):number {
-  let printCount = 0
+function print (messages:AWS.SQS.Message[], timestamp:boolean = false):number {
   let cols = []
   messages.forEach((x:AWS.SQS.Message) => {
-    if (x.Attributes && printCount < limit) {
-      printCount += 1
+    if (x.Attributes) {
       cols.push({
         timestamp: new Date(parseInt(x.Attributes.SentTimestamp)).toISOString(),
         body: x.Body

@@ -57,11 +57,15 @@ describe('Common lib', function () {
 })
 
 describe('list-message', function () {
-  before(recreateQueueAndData)
-  after(removeQueues)
+  beforeEach(recreateQueueAndData)
+  afterEach(removeQueues)
   it('Should list all messages', async function () {
     let messages = await listMessage(sqs, { queueName: 'TestQueue' })
     assert.equal(messages.length, 50)
+  })
+  it('Should list 5 messages', async function () {
+    let messages = await listMessage(sqs, { queueName: 'TestQueue', limit: 5 })
+    assert.equal(messages.length, 5)
   })
 })
 
