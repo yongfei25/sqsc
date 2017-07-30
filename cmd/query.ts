@@ -3,41 +3,26 @@ import * as sqlite3 from 'sqlite3'
 import * as columnify from 'columnify'
 import * as common from '../lib/common'
 import * as localDb from '../lib/local-db'
-import { query } from '../lib/query'
+import { query, findQueueName } from '../lib/query'
 
-exports.command = 'query <queue-name>'
-exports.desc = 'Query local database for messages'
+exports.command = 'query <sql>'
+exports.desc = 'Eg: query "select * from TestQueue"'
 exports.builder = function (yargs:yargs.Argv) {
   yargs
-    .describe('detail', 'Display more details')
-    .describe('limit', 'Number of messages to list')
-    .describe('like', 'Percent sign (%) wildcard matching on message body')
-    .describe('desc', 'Order by timestamp descending')
+    .describe('hide-headers', 'Hide headers')
   return yargs
 }
 exports.handler = async function (argv:yargs.Arguments) {
-  let db:sqlite3.Database = await localDb.getDb()
-  let params = {
-    queueName: argv.queueName,
-    like: argv.like,
-    limit: argv.limit,
-    descending: argv.desc
+  const db:sqlite3.Database = await localDb.getDb()
+  try {
+    const messages = await query(db, argv.sql)
+    console.log(columnify(messages, { showHeaders: !argv.hideHeaders }))
+  } catch (err) {
+    if (err.message.includes('No table found for queue')) {
+      const queueName = findQueueName(argv.sql)
+      console.log(`Cannot find local data for queue ${queueName}. Try doing 'sqsc pull ${queueName}' first.`)
+    } else {
+      console.error(err.message)
+    }
   }
-  let messages = await query(db, params)
-  let cols = []
-  let showCol
-  if (!argv.detail) {
-    cols = messages.map(m => { return { body: m.body }})
-    showCol = columnify(cols, { showHeaders: false })
-  } else {
-    cols = messages.map(m => {
-      return {
-        sent_time: common.getDateString(m.timestamp),
-        body: m.body,
-        fifo_seq: m.sequenceNum
-      }
-    })
-    showCol = columnify(cols)
-  }
-  console.log(showCol)
 }

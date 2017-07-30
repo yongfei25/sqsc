@@ -13,7 +13,8 @@ function getTableRegionSuffix () {
 }
 
 export function getTableName (queueName:string):string {
-  return `msg_${queueName}_${getTableRegionSuffix()}`
+  const name = queueName.replace(/\-/g, '_')
+  return `msg_${name}_${getTableRegionSuffix()}`
 }
 
 export async function getDb():Promise<sqlite3.Database> {

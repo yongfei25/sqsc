@@ -3,43 +3,34 @@ import * as AWS from 'aws-sdk'
 import * as common from './common'
 import * as localDb from './local-db'
 
-export interface ListParams {
-  queueName:string,
-  like?:string,
-  limit?:number,
-  descending?:boolean
+export function findQueueName (sql:string):string|null {
+  const match = sql.match(/.+from\s([\w\-]+)\s?.*/i)
+  if (!match) {
+    return null
+  }
+  const queueName = match[1]
+  return queueName
 }
 
-export interface ListItem {
-  timestamp:Date,
-  body:string,
-  sequenceNum:string
+export function injectTableName (sql:string, queueName:string, tableName:string):string {
+  const regexp = new RegExp(queueName, 'ig')  
+  return sql.replace(regexp, tableName)
 }
 
-export async function query (db:sqlite3.Database, params:ListParams):Promise<ListItem[]> {
-  const tableName = localDb.getTableName(params.queueName)
-  let vals = []
-  let predicates = []
-  let sql = `select sent_timestamp, sequence_number, body from ${tableName}`
-  if (params.like) {
-    predicates.push('body like ?')
-    vals.push(params.like)
+export async function query (db:sqlite3.Database, userQuery:string):Promise<any[]> {
+  const queueName = findQueueName(userQuery)
+  if (!queueName) throw new Error('Unable to find queue name from the query.')
+
+  const tableName = localDb.getTableName(queueName)
+  const tableExists = await localDb.hasTable(db, tableName)
+  if (!tableExists) {
+    throw new Error(`No table found for queue ${queueName}`)
   }
-  if (predicates.length > 0) {
-    sql += ' where ' + predicates.join(' AND ')
-  }
-  sql += ` order by sequence_number, sent_timestamp ${params.descending? 'desc' : 'asc'}`
-  if (params.limit) {
-    sql += ' limit ?'
-    vals.push(params.limit)
-  }
-  let q = new Promise<ListItem[]>((resolve, reject) => {
-    db.all(sql, vals, (err, rows) => {
+  let sql = injectTableName(userQuery, queueName, tableName)
+  let q = new Promise<any[]>((resolve, reject) => {
+    db.all(sql, (err, rows) => {
       if (err) return reject(err)
-      let result:ListItem[] = rows.map((row) => {
-        return { body: row.body, timestamp: new Date(row.sent_timestamp), sequenceNum: row.sequence_number }
-      })
-      return resolve(result)
+      return resolve(rows)
     })
   })
   return await q

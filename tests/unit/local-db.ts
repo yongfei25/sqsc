@@ -3,7 +3,7 @@ import * as AWS from 'aws-sdk'
 import * as sqlite3 from 'sqlite3'
 import * as path from 'path'
 import * as fs from 'fs'
-import { query } from '../../lib/query'
+import { query, injectTableName, findQueueName } from '../../lib/query'
 import * as common from '../../lib/common'
 import * as pull from '../../lib/pull'
 import * as localDb from '../../lib/local-db'
@@ -59,8 +59,8 @@ describe('local-db', function () {
   after(cleanup)
 
   it('should return table name', function () {
-    const tableName = localDb.getTableName('TestQueue')
-    assert.equal(tableName, 'msg_TestQueue_us_east_1')
+    const tableName = localDb.getTableName('Test-Queue')
+    assert.equal(tableName, 'msg_Test_Queue_us_east_1')
   })
   it('should list all message tables', async function () {
     let tables = await localDb.getMessageTables(db)
@@ -105,27 +105,29 @@ describe('query', function () {
   before(populateQueueAndDb)
   after(cleanup)
 
+  it('should inject actual table name', function () {
+    const userQuery = 'select * from development-queue limit 1'
+    const queueName = findQueueName(userQuery)
+    const tableName = localDb.getTableName(queueName)
+    const sql = injectTableName(userQuery, queueName, tableName)
+    const expected = 'select * from msg_development_queue_us_east_1 limit 1'
+    assert.equal(sql, expected)
+  })
   it('should list messages', async function () {
-    let rows = await query(db, { queueName: 'TestQueue' })
+    let rows = await query(db, 'select sent_timestamp, body from TestQueue')
     let row = rows[0]
     assert.equal(rows.length, totalMessages)
-    assert(row.timestamp, 'Missing timestamp')
+    assert(row.sent_timestamp, 'Missing timestamp')
     assert(row.body, 'Missing body')
   })
   it('should limit number of messages', async function () {
     const limit = 5
-    let rows = await query(db, { queueName: 'TestQueue', limit: limit })
-    assert.equal(rows.length, limit)
+    let rows = await query(db, 'select sent_timestamp, body from TestQueue limit 5')
+    assert.equal(rows.length, 5)
   })
   it('should return matched messages', async function () {
-    let rows = await query(db, { queueName: 'TestQueue', like: '%Ronna%' })
+    let rows = await query(db, `select sent_timestamp, body from TestQueue where body like '%Ronna%' limit 5`)
     assert(rows.length >= 1)
     assert(rows[0].body.includes('Ronna'))
-  })
-  it('should return correct order', async function () {
-    let rows = await query(db, { queueName: 'TestQueue', limit: 5 })
-    assert(rows[0].timestamp < rows[4].timestamp)
-    rows = await query(db, { queueName: 'TestQueue', limit: 5, descending: true })
-    assert(rows[0].timestamp > rows[4].timestamp)
   })
 })
