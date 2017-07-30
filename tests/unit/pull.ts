@@ -18,7 +18,6 @@ describe('Pull API', function () {
   let totalMessages = 50
 
   before(async function () {
-    console.log('Opening DB')
     await new Promise((resolve, reject) => {
       db = new sqlite3.Database(':memory:')
       db.on('open', resolve)
@@ -32,7 +31,6 @@ describe('Pull API', function () {
     ])
     let queueUrls = result.map((x:AWS.SQS.CreateQueueResult) => x.QueueUrl)
     // populate messages
-    console.log('Populating SQS messages.')
     let messages:string[] = fs.readFileSync(path.join(__dirname, '../fixtures/messages')).toString().split('\n')
     let promises = messages.map((msg:string) => {
       return sqs.sendMessage({ MessageBody: msg, QueueUrl: queueUrls[0] }).promise()
@@ -46,7 +44,6 @@ describe('Pull API', function () {
       db.on('error', reject)
       db.close()
     })
-    console.log('Deleting queues')
     let queues = await sqs.listQueues().promise()
     let result = await Promise.all([
       common.deleteQueue(sqs, 'TestQueue'),
@@ -57,9 +54,12 @@ describe('Pull API', function () {
 
   it('should create table for queue', async function () {
     let data = await pull.recreateMessageTable (db, 'TestQueue')
-    db.get('select count(*) count from msg_TestQueue', (err, data) => {
-      if (err) return Promise.reject(err)
-      assert.equal(data.count, 0)
+    return new Promise((resolve, reject) => {
+      db.get('select count(*) count from msg_TestQueue_us_east_1', (err, data) => {
+        if (err) return reject(err)
+        assert.equal(data.count, 0)
+        resolve()
+      })
     })
   })
   it('should pull messages and store in sqlite', async function () {
@@ -70,9 +70,12 @@ describe('Pull API', function () {
       console.log('Failed pulling')
       throw err
     }
-    db.get('select count(*) count from msg_TestQueue', (err, data) => {
-      if (err) return Promise.reject(err)
-      assert.equal(data.count, totalMessages)
+    return new Promise((resolve, reject) => {
+      db.get('select count(*) count from msg_TestQueue_us_east_1', (err, data) => {
+        if (err) return reject(err)
+        assert.equal(data.count, totalMessages)
+        resolve()
+      })
     })
   })
   it('should pull messages and store in sqlite for second time', async function () {
@@ -80,11 +83,14 @@ describe('Pull API', function () {
     assert.equal(totalInserted, totalMessages)
   })
   it('should have valid data structure for new records', async function () {
-    db.get('select * from msg_TestQueue', (err, row) => {
-      if (err) Promise.reject(err)
-      assert.ok(JSON.parse(row.body).first_name)
-      assert.notEqual(new Date(row.sent_timestamp), 'Invalid Date')
-      assert.notEqual(new Date(row.first_receive_timestamp), 'Invalid Date')
+    return new Promise((resolve, reject) => {
+      db.get('select * from msg_TestQueue_us_east_1', (err, row) => {
+        if (err) return reject(err)
+        assert.ok(JSON.parse(row.body).first_name)
+        assert.notEqual(new Date(row.sent_timestamp), 'Invalid Date')
+        assert.notEqual(new Date(row.first_receive_timestamp), 'Invalid Date')
+        resolve()
+      })
     })
   })
   it('should deduplicate messages', async function () {

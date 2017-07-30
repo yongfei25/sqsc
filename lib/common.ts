@@ -33,19 +33,23 @@ export class MessageDeduplicator {
 }
 
 export function getRegionOrDefault(defRegion:string):string {
-  try {
-    const configPath = path.join(os.homedir(), '.aws', 'config')
-    const profile = process.env.AWS_PROFILE || 'default'
-    const config = ini.parse(fs.readFileSync(configPath, 'utf-8'))
-    let region = defRegion
-    if (config[`profile ${profile}`]) {
-      region = config[`profile ${profile}`].region
-    } else if (config[profile]) {
-      region = config[profile].region
+  if (process.env.LOCALSTACK) {
+    return 'us-east-1'
+  } else {
+    try {
+      const configPath = path.join(os.homedir(), '.aws', 'config')
+      const profile = process.env.AWS_PROFILE || 'default'
+      const config = ini.parse(fs.readFileSync(configPath, 'utf-8'))
+      let region = defRegion
+      if (config[`profile ${profile}`]) {
+        region = config[`profile ${profile}`].region
+      } else if (config[profile]) {
+        region = config[profile].region
+      }
+      return region
+    } catch (err) {
+      return defRegion
     }
-    return region
-  } catch (err) {
-    return defRegion
   }
 }
 
@@ -80,7 +84,8 @@ export async function getDb():Promise<sqlite3.Database> {
 }
 
 export function getTableName (queueName:string):string {
-  return `msg_${queueName}`
+  const region = getRegionOrDefault('us-east-1').replace(/\-/g, '_')
+  return `msg_${queueName}_${region}`
 }
 
 export function convertTs (ts:string):string {
