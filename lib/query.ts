@@ -15,7 +15,7 @@ export interface ListItem {
   sequenceNum:string
 }
 
-export async function list (db:sqlite3.Database, params:ListParams):Promise<ListItem[]> {
+export async function query (db:sqlite3.Database, params:ListParams):Promise<ListItem[]> {
   const tableName = common.getTableName(params.queueName)
   let vals = []
   let predicates = []

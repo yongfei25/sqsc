@@ -2,14 +2,12 @@ import * as yargs from 'yargs'
 import * as sqlite3 from 'sqlite3'
 import * as columnify from 'columnify'
 import * as common from '../lib/common'
-import * as list from '../lib/list'
+import { query } from '../lib/query'
 
 exports.command = 'query <queue-name>'
 exports.desc = 'Query for messages'
 exports.builder = function (yargs:yargs.Argv) {
   yargs
-    .demand(['queue'])
-    .describe('queue', 'Queue name')
     .describe('detail', 'Display more details')
     .describe('limit', 'Number of messages to list')
     .describe('like', 'Percent sign (%) wildcard matching on message body')
@@ -24,7 +22,7 @@ exports.handler = async function (argv:yargs.Arguments) {
     limit: argv.limit,
     descending: argv.desc
   }
-  let messages = await list.list(db, params)
+  let messages = await query(db, params)
   let cols = []
   let showCol
   if (!argv.detail) {

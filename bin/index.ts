@@ -2,9 +2,8 @@
 import * as yargs from 'yargs'
 import * as path from 'path'
 
-let blacklist = /(pull|query)/
 yargs
-  .commandDir(path.join(__dirname, '../cmd'), { exclude: blacklist })
+  .commandDir(path.join(__dirname, '../cmd'))
   .demandCommand(1)
   .help()
   .argv

@@ -3,11 +3,11 @@ import * as AWS from 'aws-sdk'
 import * as sqlite3 from 'sqlite3'
 import * as path from 'path'
 import * as fs from 'fs'
-import * as list from '../../lib/list'
+import { query } from '../../lib/query'
 import * as common from '../../lib/common'
 import * as pull from '../../lib/pull'
 
-describe('List API', function () {
+describe('query', function () {
   const dbPath = path.join(__dirname, '../temp/testdb')
   let db:sqlite3.Database
   const sqs:AWS.SQS = new AWS.SQS({
@@ -54,7 +54,7 @@ describe('List API', function () {
   })
 
   it('should list messages', async function () {
-    let rows = await list.list(db, { queueName: 'TestQueue' })
+    let rows = await query(db, { queueName: 'TestQueue' })
     let row = rows[0]
     assert.equal(rows.length, totalMessages)
     assert(row.timestamp, 'Missing timestamp')
@@ -62,18 +62,18 @@ describe('List API', function () {
   })
   it('should limit number of messages', async function () {
     const limit = 5
-    let rows = await list.list(db, { queueName: 'TestQueue', limit: limit })
+    let rows = await query(db, { queueName: 'TestQueue', limit: limit })
     assert.equal(rows.length, limit)
   })
   it('should return matched messages', async function () {
-    let rows = await list.list(db, { queueName: 'TestQueue', like: '%Ronna%' })
+    let rows = await query(db, { queueName: 'TestQueue', like: '%Ronna%' })
     assert(rows.length >= 1)
     assert(rows[0].body.includes('Ronna'))
   })
   it('should return correct order', async function () {
-    let rows = await list.list(db, { queueName: 'TestQueue', limit: 5 })
+    let rows = await query(db, { queueName: 'TestQueue', limit: 5 })
     assert(rows[0].timestamp < rows[4].timestamp)
-    rows = await list.list(db, { queueName: 'TestQueue', limit: 5, descending: true })
+    rows = await query(db, { queueName: 'TestQueue', limit: 5, descending: true })
     assert(rows[0].timestamp > rows[4].timestamp)
   })
 })
