@@ -67,11 +67,23 @@ describe('list-message', function () {
     let messages = await listMessage(sqs, { queueName: 'TestQueue', limit: 5 })
     assert.equal(messages.length, 5)
   })
+  it('Should list no message', async function () {
+    let messages = await listMessage(sqs, { queueName: 'TestErrorQueue' })
+    assert.equal(messages.length, 0)
+  })
 })
 
 describe('copy-message', function () {
   before(recreateQueueAndData)
   after(removeQueues)
+  it('Should copy no message', async function () {
+    const messages = await copyMessage(sqs, {
+      sourceQueueName: 'TestErrorQueue',
+      targetQueueName: 'TestQueue',
+      timeout: 30
+    })
+    assert.equal(messages.length, 0)
+  })
   it('Should return messages copied', async function () {
     const messages = await copyMessage(sqs, {
       sourceQueueName: 'TestQueue',
