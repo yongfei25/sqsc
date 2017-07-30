@@ -17,8 +17,12 @@ exports.handler = async function (argv:yargs.Arguments) {
   let db = await localDb.getDb()
   let param = { queueName: argv.queueName }
   let spinner = ora('Pulling SQS messages').start()
-  let result = await pull.pull(sqs, db, param, (current, total) => {
-    spinner.text = `Received ${current} / ${total} messages.`
-  })
-  spinner.succeed(`Done. Stored ${result} messages.`)
+  try {
+    let result = await pull.pull(sqs, db, param, (current, total) => {
+      spinner.text = `Received ${current} / ${total} messages.`
+    })
+    spinner.succeed(`Done. Stored ${result} messages.`)
+  } catch (err) {
+    spinner.fail(err.message)
+  }
 }
