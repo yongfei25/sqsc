@@ -3,10 +3,8 @@
 ## Development setup
 ```bash
 # Starting localstack
-# Unix
+export TMPDIR=/private$TMPDIR # MacOS only
 docker-compose up -d
-# MacOS
-TMPDIR=/private$TMPDIR docker-compose up -d
 
 # Populating queues and messages for Development
 export LOCALSTACK=1
