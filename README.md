@@ -14,20 +14,34 @@ npm install -g sqsc
 ![list queue](./media/list-queue.png)
 
 ### List messages: `sqsc ls <queue-name>`
+_Options:_
+- `timeout`: Visibility timeout for messages received (Default = 30). You might need to increase this if the queue has a lot of messages to prevent reading the same message.
+- `timestamp`: Display timestamp.
+- `limit`: Maximum number of messages to list.
+
 ![list messages](./media/list-message.png)
 
 ### Copy all messages to queue: `sqsc cp <from-queue-name> <to-queue-name>`
 ### Move all messages to queue: `sqsc mv <from-queue-name> <to-queue-name>`
+_Options:_
+- `timeout`: Visibility timeout for messages received (Default = 30).
+
 ![list messages](./media/copy-message.png)
 
 ### Describe queue: `sqsc describe <queue-name>`
 ![describe](./media/describe.png)
 
 ### SQL query: `sqsc query "SELECT body FROM <queue-name> WHERE body LIKE '%user%'"`
-1. Run `sqsc pull <queue-name>` to store messages in local sqlite database.
-2. To query, run `sqsc query <sql-query>`. Internally, `sqsc` will try to guess the queue name in the SQL.
-3. To see what queues are available for query, run `sqsc list-table`.
-4. To see the table schema, run `sqsc schema`.
+#### 1. Run `sqsc pull <queue-name>` to store messages in local sqlite database.
+_Options:_
+- `timeout`: Visibility timeout for messages received (Default = 30).
+
+#### 2. To query, run `sqsc query <sql-query>`. Internally, `sqsc` will try to guess the queue name in the SQL.
+_Options:_
+- `hide-headers`: Do not show column headers. (Eg: you want to use body with JSON parser like `jq`)
+
+#### 3. To see what queues are available for query, run `sqsc list-table`.
+#### 4. To see the table schema, run `sqsc schema`.
 ![query](./media/query.png)
 
 ## Unsupported Features
