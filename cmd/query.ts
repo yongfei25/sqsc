@@ -2,6 +2,7 @@ import * as yargs from 'yargs'
 import * as sqlite3 from 'sqlite3'
 import * as columnify from 'columnify'
 import * as common from '../lib/common'
+import * as localDb from '../lib/local-db'
 import { query } from '../lib/query'
 
 exports.command = 'query <queue-name>'
@@ -15,7 +16,7 @@ exports.builder = function (yargs:yargs.Argv) {
   return yargs
 }
 exports.handler = async function (argv:yargs.Arguments) {
-  let db:sqlite3.Database = await common.getDb()
+  let db:sqlite3.Database = await localDb.getDb()
   let params = {
     queueName: argv.queueName,
     like: argv.like,

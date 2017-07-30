@@ -1,6 +1,7 @@
 import * as yargs from 'yargs'
 import * as ora from 'ora'
 import * as common from '../lib/common'
+import * as localDb from '../lib/local-db'
 import * as pull from '../lib/pull'
 
 exports.command = 'pull <queue-name>'
@@ -13,7 +14,7 @@ exports.builder = function (yargs:yargs.Argv) {
 }
 exports.handler = async function (argv:yargs.Arguments) {
   let sqs = common.getSQS()
-  let db = await common.getDb()
+  let db = await localDb.getDb()
   let param = { queueName: argv.queueName }
   let spinner = ora('Pulling SQS messages').start()
   let result = await pull.pull(sqs, db, param, (current, total) => {

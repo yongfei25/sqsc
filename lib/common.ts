@@ -73,16 +73,6 @@ export function getLocalSQS ():AWS.SQS {
   return sqs
 }
 
-export async function getDb():Promise<sqlite3.Database> {
-  let filename = path.join(__dirname, '../main.db')
-  let promise = new Promise<sqlite3.Database>((resolve, reject) => {
-    let db = new sqlite3.Database(filename)
-    db.on('error', (err) => reject(err))
-    db.on('open', () => resolve(db))
-  })
-  return promise
-}
-
 export function convertTs (ts:string):string {
   let d = new Date(parseInt(ts))
   let ds = d.toISOString()
