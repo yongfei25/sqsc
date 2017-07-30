@@ -11,6 +11,8 @@ describe('Pull API', function () {
   const dbPath = path.join(__dirname, '../temp/testdb')
   let db:sqlite3.Database
   const sqs:AWS.SQS = new AWS.SQS({
+     accessKeyId: 'foo',
+    secretAccessKey: 'bar',
     apiVersion: '2012-11-05',
     region: 'us-east-1',
     endpoint: 'http://0.0.0.0:4476'

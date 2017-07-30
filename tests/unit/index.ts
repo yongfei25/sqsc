@@ -8,6 +8,8 @@ import { listMessage } from '../../lib/list-message'
 import { copyMessage } from '../../lib/copy-message'
 
 const sqs:AWS.SQS = new AWS.SQS({
+  accessKeyId: 'foo',
+  secretAccessKey: 'bar',
   apiVersion: '2012-11-05',
   region: 'us-east-1',
   endpoint: 'http://0.0.0.0:4476'
