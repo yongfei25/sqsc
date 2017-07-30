@@ -1,51 +1,51 @@
 {
-    "name": "sqsc",
-    "version": "0.0.3",
-    "description": "sqsc is a command line tool for interacting with AWS SQS queues",
-    "bin": {
-        "sqsc": "bin/index.js"
-    },
-    "scripts": {
-        "build": "./node_modules/typescript/bin/tsc -p . && chmod +x bin/index.js",
-        "prepare": "npm run build",
-        "pretest": "docker-compose -f docker-compose-test.yml --project-name sqsc_test up --force-recreate -d && sleep 2",
-        "test": "npm run build && NODE_ENV=test LOCALSTACK=1 mocha tests/unit",
-        "posttest": "docker-compose -f docker-compose-test.yml --project-name sqsc_test down"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/yongfei25/sqsc.git"
-    },
-    "homepage": "https://github.com/yongfei25/sqsc",
-    "keywords": [
-        "aws",
-        "sqs",
-        "cli",
-        "console"
-    ],
-    "author": "Yong Fei <yongfei25@outlook.com>",
-    "bugs": "https://github.com/yongfei25/sqsc/issues",
-    "license": "MIT",
-    "devDependencies": {
-        "@types/async": "^2.0.40",
-        "@types/ini": "^1.3.29",
-        "@types/mocha": "^2.2.41",
-        "@types/node": "^8.0.7",
-        "@types/sqlite3": "^3.1.0",
-        "@types/yargs": "^8.0.0",
-        "eslint-plugin-typescript": "^0.1.0",
-        "mocha": "^3.4.2",
-        "standard": "^10.0.2",
-        "typescript": "^2.4.1",
-        "typescript-eslint-parser": "^3.0.0"
-    },
-    "dependencies": {
-        "async": "^2.5.0",
-        "aws-sdk": "^2.81.0",
-        "columnify": "^1.5.4",
-        "ini": "^1.3.4",
-        "ora": "^1.3.0",
-        "yargs": "^8.0.2",
-        "sqlite3": "^3.1.8"
-    }
+  "name": "sqsc",
+  "version": "0.0.4",
+  "description": "sqsc is a command line tool for interacting with AWS SQS queues",
+  "bin": {
+    "sqsc": "bin/index.js"
+  },
+  "scripts": {
+    "build": "./node_modules/typescript/bin/tsc -p . && chmod +x bin/index.js",
+    "prepare": "npm run build",
+    "pretest": "docker-compose -f docker-compose-test.yml --project-name sqsc_test up --force-recreate -d && sleep 2",
+    "test": "npm run build && NODE_ENV=test LOCALSTACK=1 mocha tests/unit",
+    "posttest": "docker-compose -f docker-compose-test.yml --project-name sqsc_test down"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yongfei25/sqsc.git"
+  },
+  "homepage": "https://github.com/yongfei25/sqsc",
+  "keywords": [
+    "aws",
+    "sqs",
+    "cli",
+    "console"
+  ],
+  "author": "Yong Fei <yongfei25@outlook.com>",
+  "bugs": "https://github.com/yongfei25/sqsc/issues",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/async": "^2.0.40",
+    "@types/ini": "^1.3.29",
+    "@types/mocha": "^2.2.41",
+    "@types/node": "^8.0.7",
+    "@types/sqlite3": "^3.1.0",
+    "@types/yargs": "^8.0.0",
+    "eslint-plugin-typescript": "^0.1.0",
+    "mocha": "^3.4.2",
+    "standard": "^10.0.2",
+    "typescript": "^2.4.1",
+    "typescript-eslint-parser": "^3.0.0"
+  },
+  "dependencies": {
+    "async": "^2.5.0",
+    "aws-sdk": "^2.81.0",
+    "columnify": "^1.5.4",
+    "ini": "^1.3.4",
+    "ora": "^1.3.0",
+    "yargs": "^8.0.2",
+    "sqlite3": "^3.1.8"
+  }
 }
