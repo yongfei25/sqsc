@@ -6,7 +6,7 @@ import * as localDb from '../lib/local-db'
 import { query, findQueueName } from '../lib/query'
 
 exports.command = 'query <sql>'
-exports.desc = 'Eg: query "select * from TestQueue"'
+exports.desc = 'Eg: sqsc query "select * from TestQueue"'
 exports.builder = function (yargs:yargs.Argv) {
   yargs
     .describe('hide-headers', 'Hide headers')
