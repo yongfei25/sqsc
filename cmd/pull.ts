@@ -3,12 +3,10 @@ import * as ora from 'ora'
 import * as common from '../lib/common'
 import * as pull from '../lib/pull'
 
-exports.command = 'pull'
-exports.desc = 'Store messages in local database'
+exports.command = 'pull <queue-name>'
+exports.desc = 'Pull and store messages in local database'
 exports.builder = function (yargs:yargs.Argv) {
   yargs
-    .demand(['queue'])
-    .describe('queue', 'Queue name')
     .default('timeout', 30)
     .describe('timeout', 'Visibility timeout')
   return yargs

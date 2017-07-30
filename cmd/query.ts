@@ -5,7 +5,7 @@ import * as common from '../lib/common'
 import { query } from '../lib/query'
 
 exports.command = 'query <queue-name>'
-exports.desc = 'Query for messages'
+exports.desc = 'Query local database for messages'
 exports.builder = function (yargs:yargs.Argv) {
   yargs
     .describe('detail', 'Display more details')

@@ -52,16 +52,6 @@ describe('Pull API', function () {
     return result
   })
 
-  it('should create table for queue', async function () {
-    let data = await pull.recreateMessageTable (db, 'TestQueue')
-    return new Promise((resolve, reject) => {
-      db.get('select count(*) count from msg_TestQueue_us_east_1', (err, data) => {
-        if (err) return reject(err)
-        assert.equal(data.count, 0)
-        resolve()
-      })
-    })
-  })
   it('should pull messages and store in sqlite', async function () {
     try {
       let totalInserted = await pull.pull(sqs, db, { queueName: 'TestQueue' })

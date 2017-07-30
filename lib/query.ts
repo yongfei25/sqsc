@@ -1,6 +1,7 @@
 import * as sqlite3 from 'sqlite3'
 import * as AWS from 'aws-sdk'
 import * as common from './common'
+import * as localDb from './local-db'
 
 export interface ListParams {
   queueName:string,
@@ -16,7 +17,7 @@ export interface ListItem {
 }
 
 export async function query (db:sqlite3.Database, params:ListParams):Promise<ListItem[]> {
-  const tableName = common.getTableName(params.queueName)
+  const tableName = localDb.getTableName(params.queueName)
   let vals = []
   let predicates = []
   let sql = `select sent_timestamp, sequence_number, body from ${tableName}`

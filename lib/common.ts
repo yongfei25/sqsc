@@ -83,11 +83,6 @@ export async function getDb():Promise<sqlite3.Database> {
   return promise
 }
 
-export function getTableName (queueName:string):string {
-  const region = getRegionOrDefault('us-east-1').replace(/\-/g, '_')
-  return `msg_${queueName}_${region}`
-}
-
 export function convertTs (ts:string):string {
   let d = new Date(parseInt(ts))
   let ds = d.toISOString()

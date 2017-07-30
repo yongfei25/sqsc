@@ -1,6 +1,7 @@
 import * as AWS from 'aws-sdk'
 import * as sqlite3 from 'sqlite3'
 import * as common from './common'
+import * as localDb from './local-db'
 
 interface ProgressCallback {
   (current:number, total:number): void
@@ -12,7 +13,7 @@ interface PullParams {
 }
 
 function tableExists (db:sqlite3.Database, queueName:string):Promise<boolean> {
-  const tableName = common.getTableName(queueName)
+  const tableName = localDb.getTableName(queueName)
   return new Promise<boolean>((resolve, reject) => {
     db.get('SELECT name FROM sqlite_master WHERE type=? and name = ?', ['table', tableName], (err, row) => {
       if (err) return reject(err)
@@ -22,7 +23,7 @@ function tableExists (db:sqlite3.Database, queueName:string):Promise<boolean> {
 }
 
 export async function recreateMessageTable (db:sqlite3.Database, queueName:string):Promise<sqlite3.RunResult> {
-  const tableName = common.getTableName(queueName)
+  const tableName = localDb.getTableName(queueName)
   let createTableSql = `
     create table ${tableName} (
       id text primary key,
@@ -52,7 +53,7 @@ export async function recreateMessageTable (db:sqlite3.Database, queueName:strin
 }
 
 export async function insertMessages (db:sqlite3.Database, queueName:string, messages:AWS.SQS.Message[]):Promise<number> {
-  const tableName = common.getTableName(queueName)
+  const tableName = localDb.getTableName(queueName)
   let sql = `insert or ignore into ${tableName} values `
   let params = []
   for (let i=0; i<messages.length; i++) {
@@ -74,7 +75,7 @@ export async function insertMessages (db:sqlite3.Database, queueName:string, mes
 }
 
 export async function getAllReceiptHandles (sqs:AWS.SQS, db:sqlite3.Database, queueName:string):Promise<string[]> {
-  const tableName = common.getTableName(queueName)
+  const tableName = localDb.getTableName(queueName)
   let p1 = new Promise<string[]>((resolve, reject) => {
     db.all(`select receipt_handle from ${tableName}`, (err, rows) => {
       if (err) return reject(err)
@@ -87,7 +88,7 @@ export async function getAllReceiptHandles (sqs:AWS.SQS, db:sqlite3.Database, qu
 
 // WARN: if the message current is not inflight, changing the timeout will receive error 400
 export async function resetAllTimeout (sqs:AWS.SQS, db:sqlite3.Database, queueName:string, queueUrl?:string):Promise<number> {
-  const tableName = common.getTableName(queueName)
+  const tableName = localDb.getTableName(queueName)
   let exists = await tableExists(db, queueName)
   let result = 0
   if (exists) {
