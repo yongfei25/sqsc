@@ -1,6 +1,6 @@
 {
   "name": "sqsc",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "sqsc is a command line tool for interacting with AWS SQS queues",
   "bin": {
     "sqsc": "bin/index.js"
