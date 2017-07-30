@@ -1,12 +1,26 @@
 import * as sqlite3 from 'sqlite3'
 import * as common from './common'
 
+interface MessageTableStat {
+  numOfMessage:number
+  lastMessageTimestamp:Date|null
+}
+
 function getTableRegionSuffix () {
   return common.getRegionOrDefault('us-east-1').replace(/\-/g, '_')
 }
 
 export function getTableName (queueName:string):string {
   return `msg_${queueName}_${getTableRegionSuffix()}`
+}
+
+export function hasTable (db:sqlite3.Database, tableName:string):Promise<boolean> {
+  return new Promise<boolean>((resolve, reject) => {
+    db.get('SELECT name FROM sqlite_master WHERE type=? and name = ?', ['table', tableName], (err, row) => {
+      if (err) return reject(err)
+      return resolve((row && row.name === tableName))
+    })
+  })
 }
 
 export async function getMessageTables (db:sqlite3.Database):Promise<string[]> {
@@ -19,4 +33,49 @@ export async function getMessageTables (db:sqlite3.Database):Promise<string[]> {
       resolve(rows.map(r => r.name))
     })
   })
+}
+
+export function countRows (db:sqlite3.Database, tableName:string):Promise<number> {
+  return new Promise<number>((resolve, reject) => {
+    db.get(`SELECT COUNT(*) numRows FROM ${tableName}`, (err, row) => {
+      if (err) return reject(err)
+      return resolve(row.numRows)
+    })
+  })
+}
+
+export function getLastSentTimestamp (db:sqlite3.Database, tableName):Promise<Date|null> {
+  return new Promise<Date|null>((resolve, reject) => {
+    db.get(`SELECT MAX(sent_timestamp) last_timestamp FROM ${tableName}`, (err, row) => {
+      if (err) return reject(err)
+      if (row) {
+        return resolve(new Date(row.last_timestamp))
+      } else {
+        return resolve(null)
+      }
+    })
+  })
+}
+
+export async function getMessageTableStat (db:sqlite3.Database, tableName:string):Promise<MessageTableStat> {
+  const tableExists = await hasTable(db, tableName)
+  if (!tableExists) {
+    throw new Error(`Table ${tableName} does not exists.`)
+  }
+  try {
+    const [numMessage, lastTimestamp] = await Promise.all([
+      countRows(db, tableName),
+      getLastSentTimestamp(db, tableName)
+    ])
+    return { numOfMessage: numMessage, lastMessageTimestamp: lastTimestamp }
+  } catch (err) {
+    console.error(`Error fetching stat for message table ${tableName}`, err.message)
+    throw err
+  }
+}
+
+export async function getAllMessageTableStats (db:sqlite3.Database):Promise<MessageTableStat[]> {
+  const tables = await getMessageTables(db)
+  const promises = tables.map(table => getMessageTableStat(db, table))
+  return await Promise.all(promises)
 }

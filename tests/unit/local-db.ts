@@ -58,10 +58,46 @@ describe('local-db', function () {
   before(populateQueueAndDb)
   after(cleanup)
 
+  it('should return table name', function () {
+    const tableName = localDb.getTableName('TestQueue')
+    assert.equal(tableName, 'msg_TestQueue_us_east_1')
+  })
   it('should list all message tables', async function () {
     let tables = await localDb.getMessageTables(db)
     assert(tables.includes('msg_TestQueue_us_east_1'))
     assert(tables.includes('msg_TestErrorQueue_us_east_1'))
+  })
+  it('should return the correct number of rows', async function () {
+    const tableName = localDb.getTableName('TestQueue')
+    const numRows = await localDb.countRows(db, tableName)
+    assert.equal(numRows, 50)
+  })
+  it('should return 0 num of rows.', async function () {
+    const tableName = localDb.getTableName('TestErrorQueue')
+    const numRows = await localDb.countRows(db, tableName)
+    assert.equal(numRows, 0)
+  })
+  it('should return last sent_timestamp', async function () {
+    const tableName = localDb.getTableName('TestQueue')
+    const lastTimestamp = await new Promise<Date>((resolve, reject) => {
+      db.get('SELECT MAX(sent_timestamp) last FROM msg_TestQueue_us_east_1', (err, row) => {
+        if (err) return reject(err)
+        return resolve(new Date(row.last))
+      })
+    })
+    const lastTimestampResult = await localDb.getLastSentTimestamp(db, tableName)
+    assert.equal(lastTimestampResult.getTime(), lastTimestamp.getTime())
+  })
+  it('should return correct stat', async function () {
+    const tableName = localDb.getTableName('TestQueue')
+    const lastTimestamp = await localDb.getLastSentTimestamp(db, tableName)
+    const stat = await localDb.getMessageTableStat(db, tableName)
+    assert.equal(stat.numOfMessage, 50)
+    assert.strictEqual(stat.lastMessageTimestamp.getTime(), lastTimestamp.getTime())
+  })
+  it('should return stats for all tables', async function () {
+    const stats = await localDb.getAllMessageTableStats(db)
+    assert(stats.length === 2)
   })
 })
 
