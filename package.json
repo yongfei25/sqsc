@@ -1,25 +1,31 @@
 {
     "name": "sqsc",
-    "version": "0.0.1",
-    "description": "",
-    "main": "index.js",
+    "version": "0.0.0",
+    "description": "sqsc is a command line tool for interacting with AWS SQS queues",
     "bin": {
         "sqsc": "bin/index.js"
     },
     "scripts": {
+        "build": "./node_modules/typescript/bin/tsc -p . && chmod +x bin/index.js",
+        "prepare": "npm run build",
         "pretest": "docker-compose -f docker-compose-test.yml --project-name sqsc_test up --force-recreate -d && sleep 2",
-        "test": "tsc -p . && NODE_ENV=test LOCALSTACK=1 mocha tests/unit",
+        "test": "npm run build && NODE_ENV=test LOCALSTACK=1 mocha tests/unit",
         "posttest": "docker-compose -f docker-compose-test.yml --project-name sqsc_test down"
     },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "standard": {
-        "parser": "typescript-eslint-parser",
-        "plugins": [
-            "typescript"
-        ]
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/yongfei25/sqsc.git"
     },
+    "homepage": "https://github.com/yongfei25/sqsc",
+    "keywords": [
+        "aws",
+        "sqs",
+        "cli",
+        "console"
+    ],
+    "author": "Yong Fei <yongfei25@outlook.com>",
+    "bugs": "https://github.com/yongfei25/sqsc/issues",
+    "license": "MIT",
     "devDependencies": {
         "@types/async": "^2.0.40",
         "@types/ini": "^1.3.29",
