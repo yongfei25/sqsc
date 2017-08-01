@@ -1,9 +1,4 @@
 import * as yargs from 'yargs'
-import * as sqlite3 from 'sqlite3'
-import * as columnify from 'columnify'
-import * as common from '../lib/common'
-import * as localDb from '../lib/local-db'
-import { query, findQueueName } from '../lib/query'
 
 exports.command = 'schema'
 exports.desc = 'Display the local table schema.'
