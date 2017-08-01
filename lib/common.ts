@@ -3,6 +3,7 @@ import * as ini from 'ini'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
+import * as crypto from 'crypto'
 import * as sqlite3 from 'sqlite3'
 
 interface ReceiveMessageRequest {
@@ -117,6 +118,10 @@ export async function getQueueAttributes (sqs:AWS.SQS, queueName:string):Promise
   }).promise()
 }
 
+export function getBatchItemId (str:string):string {
+  return crypto.createHash('md5').update((new Date()).toISOString() + str).digest("hex")
+}
+
 export async function changeTimeout (sqs:AWS.SQS, queueUrl:string, receiptHandles:string[], timeout:number)
   :Promise<any> {
   if (process.env.LOCALSTACK) {
@@ -132,7 +137,7 @@ export async function changeTimeout (sqs:AWS.SQS, queueUrl:string, receiptHandle
     return Promise.all(promises)
   } else {
     let entries = receiptHandles.map((r:string) => {
-      return { Id: r, ReceiptHandle: r, VisibilityTimeout: timeout }
+      return { Id: getBatchItemId(r), ReceiptHandle: r, VisibilityTimeout: timeout }
     })
     return sqs.changeMessageVisibilityBatch({
       QueueUrl: queueUrl,
