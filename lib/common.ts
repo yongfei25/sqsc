@@ -6,6 +6,8 @@ import * as path from 'path'
 import * as crypto from 'crypto'
 import * as sqlite3 from 'sqlite3'
 
+const createChunk = require('lodash.chunk');
+
 interface ReceiveMessageRequest {
   queueUrl: string
   timeout:number
@@ -127,7 +129,7 @@ export async function changeTimeout (sqs:AWS.SQS, queueUrl:string, receiptHandle
   if (process.env.LOCALSTACK) {
     // Can't seem to use batch API in localstack?
     // Getting "500: null" Error
-    let promises = receiptHandles.map((r:string) => {
+    const promises = receiptHandles.map((r:string) => {
       return sqs.changeMessageVisibility({
         QueueUrl: queueUrl,
         ReceiptHandle: r,
@@ -136,13 +138,17 @@ export async function changeTimeout (sqs:AWS.SQS, queueUrl:string, receiptHandle
     })
     return Promise.all(promises)
   } else {
-    let entries = receiptHandles.map((r:string) => {
+    const entries = receiptHandles.map((r:string) => {
       return { Id: getBatchItemId(r), ReceiptHandle: r, VisibilityTimeout: timeout }
     })
-    return sqs.changeMessageVisibilityBatch({
-      QueueUrl: queueUrl,
-      Entries: entries
-    }).promise()
+    const chunks = createChunk(entries, 10)
+    const promises = chunks.map((batchEntries) => {
+      return sqs.changeMessageVisibilityBatch({
+        QueueUrl: queueUrl,
+        Entries: batchEntries
+      }).promise()
+    })
+    return await Promise.all(promises)
   }
 }
 
