@@ -6,7 +6,7 @@ import * as path from 'path'
 import * as crypto from 'crypto'
 import * as sqlite3 from 'sqlite3'
 
-const createChunk = require('lodash.chunk');
+const createChunks = require('lodash.chunk');
 
 interface ReceiveMessageRequest {
   queueUrl: string
@@ -141,7 +141,7 @@ export async function changeTimeout (sqs:AWS.SQS, queueUrl:string, receiptHandle
     const entries = receiptHandles.map((r:string) => {
       return { Id: getBatchItemId(r), ReceiptHandle: r, VisibilityTimeout: timeout }
     })
-    const chunks = createChunk(entries, 10)
+    const chunks = createChunks(entries, 10)
     const promises = chunks.map((batchEntries) => {
       return sqs.changeMessageVisibilityBatch({
         QueueUrl: queueUrl,

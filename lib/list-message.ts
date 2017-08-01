@@ -22,15 +22,15 @@ export async function listMessage (sqs:AWS.SQS, param:ListMessageRequest):Promis
   param.limit = param.limit || Number.MAX_SAFE_INTEGER
   let receiveParam = { queueUrl: queueUrl, timeout: param.timeout, resetTimeout: true }
   let allMessages = []
-  await common.receiveMessage(sqs, receiveParam, async (messages, numReceived) => {
-    if (numReceived > param.limit) {
-      messages = messages.slice(0, Math.min(Math.abs(numReceived-param.limit), messages.length))
+  await common.receiveMessage(sqs, receiveParam, async (messages, totalNumReceived) => {
+    if (totalNumReceived > param.limit) {
+      messages = messages.slice(0, Math.abs(param.limit - messages.length))
     }
     allMessages = allMessages.concat(messages)
     if (param.print) {
       print(messages, param.timestamp)
     }
-    const shouldContinue = numReceived < param.limit
+    const shouldContinue = totalNumReceived < param.limit
     return shouldContinue
   })
   return Promise.resolve(allMessages)
