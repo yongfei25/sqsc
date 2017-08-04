@@ -44,6 +44,26 @@ _Options:_
 #### 4. To see the table schema, run `sqsc schema`.
 ![query](./media/query.png)
 
+#### 5. To query fields in JSON, use `json_extract` function in `sqlite`.
+```bash
+$ sqsc query "select json_extract(body, '$.gender') gender, count(*) from DevelopmentQueue group by 1"
+
+GENDER COUNT(*)
+Female 24
+Male   26
+```
+
+## Message `visibility timeout` and `max receive count`
+- When a message is received by `sqsc`, the `visibility timeout` is set to `30s` by default. You can use the `--timeout` parameter to change it.
+- `sqsc` keeps the `receipt handle` for all messages to reset their `visibility timeout` at the end of the command.
+- If `sqsc` receive the same message more than once, it will only use the first message. (It checks `message ID`)
+- `max receive count` of `redrive policy` increases as usual for each receive.
+- The following commands receive message thus have the effects mentioned above:
+  - `ls`
+  - `mv`
+  - `cp`
+  - `pull`
+
 ## Unsupported Features
 - Server side encryption
 - FIFO queue
