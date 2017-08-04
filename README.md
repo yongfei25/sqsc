@@ -57,7 +57,7 @@ Male   26
 - When a message is received by `sqsc`, the `visibility timeout` is set to `30s` by default. You can use the `--timeout` parameter to change it.
 - `sqsc` keeps the `receipt handle` for all messages to reset their `visibility timeout` at the end of the command.
 - If `sqsc` receive the same message more than once, it will only use the first message. (It checks `message ID`)
-- `max receive count` of `redrive policy` increases as usual for each receive.
+- `receive count` of message increases as usual for each receive. Message goes into `dead letter queue` when it hits `max receive count`.
 - The following commands receive message thus have the effects mentioned above:
   - `ls`
   - `mv`
