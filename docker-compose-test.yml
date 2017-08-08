@@ -2,7 +2,7 @@ version: '2.1'
 
 services:
   localstack_test:
-    image: localstack/localstack
+    image: localstack/localstack:0.7.0
     ports:
       - "4476:4476"
     environment:
