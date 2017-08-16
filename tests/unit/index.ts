@@ -65,9 +65,9 @@ describe('list-message', function () {
     let messages = await listMessage(sqs, { queueName: 'TestQueue' })
     assert.equal(messages.length, 50)
   })
-  it('Should list 5 messages', async function () {
-    let messages = await listMessage(sqs, { queueName: 'TestQueue', limit: 5 })
-    assert.equal(messages.length, 5)
+  it('Should list 4 messages', async function () {
+    let messages = await listMessage(sqs, { queueName: 'TestQueue', limit: 4 })
+    assert.equal(messages.length, 4)
   })
   it('Should list 11 messages', async function () {
     let messages = await listMessage(sqs, { queueName: 'TestQueue', limit: 11 })

@@ -24,7 +24,9 @@ export async function listMessage (sqs:AWS.SQS, param:ListMessageRequest):Promis
   let allMessages = []
   await common.receiveMessage(sqs, receiveParam, async (messages, totalNumReceived) => {
     if (totalNumReceived > param.limit) {
-      messages = messages.slice(0, Math.abs(param.limit - messages.length))
+      const numOverflow = totalNumReceived - param.limit
+      const newLength = messages.length > numOverflow ? messages.length - numOverflow : messages.length
+      messages = messages.slice(0, newLength)
     }
     allMessages = allMessages.concat(messages)
     if (param.print) {
