@@ -3,9 +3,13 @@
     "target": "es2016",
     "module": "commonjs",
     "strict": false,
+    "outDir": "dist",
     "moduleResolution": "node",
     "sourceMap": false
   },
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
     "node_modules"
   ]

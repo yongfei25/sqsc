@@ -3,3 +3,4 @@ build
 *.js
 *.js.map
 *.db
+dist

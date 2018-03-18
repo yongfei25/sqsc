@@ -33,7 +33,7 @@ describe('Pull API', function () {
     ])
     let queueUrls = result.map((x:AWS.SQS.CreateQueueResult) => x.QueueUrl)
     // populate messages
-    let messages:string[] = fs.readFileSync(path.join(__dirname, '../fixtures/messages')).toString().split('\n')
+    let messages:string[] = fs.readFileSync(path.join(__dirname, '../../../fixtures/messages')).toString().split('\n')
     let promises = messages.map((msg:string) => {
       return sqs.sendMessage({ MessageBody: msg, QueueUrl: queueUrls[0] }).promise()
     })
