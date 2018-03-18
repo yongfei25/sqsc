@@ -5,7 +5,16 @@ import * as localDb from '../lib/local-db'
 
 exports.command = 'list-table'
 exports.desc = 'List all local tables pulled with sqsc.'
-exports.handler = async function (argv:yargs.Arguments) {
+exports.handler = function (argv:yargs.Arguments) {
+  getStatColumns().then((cols) => {
+    console.log(columnify(cols))
+  }).catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
+}
+
+async function getStatColumns () {
   const db = await localDb.getDb()
   const stats = await localDb.getAllMessageTableStats(db)
   const cols = stats.map((stat) => {
@@ -15,7 +24,7 @@ exports.handler = async function (argv:yargs.Arguments) {
       latest_message: latestTimeStampString(stat.lastMessageTimestamp)
     }
   })
-  console.log(columnify(cols))
+  return cols
 }
 
 function getQueueNameFromTableName (tableName:string):string|null {

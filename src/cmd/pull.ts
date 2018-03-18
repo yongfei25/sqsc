@@ -12,7 +12,14 @@ exports.builder = function (yargs:yargs.Argv) {
     .describe('timeout', 'Visibility timeout')
   return yargs
 }
-exports.handler = async function (argv:yargs.Arguments) {
+exports.handler = function (argv:yargs.Arguments) {
+  pullMessages(argv).catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
+}
+
+async function pullMessages (argv:yargs.Arguments) {
   let sqs = common.getSQS()
   let db = await localDb.getDb()
   let param = { queueName: argv.queueName }

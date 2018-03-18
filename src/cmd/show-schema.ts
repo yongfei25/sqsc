@@ -2,7 +2,7 @@ import * as yargs from 'yargs'
 
 exports.command = 'schema'
 exports.desc = 'Display the local table schema.'
-exports.handler = async function (argv:yargs.Arguments) {
+exports.handler = function (argv:yargs.Arguments) {
   console.log(`
     id text
     receipt_handle text

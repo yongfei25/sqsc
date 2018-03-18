@@ -13,13 +13,16 @@ exports.builder = function (yargs:yargs.Argv) {
     .default('timeout', 30)
   return yargs
 }
-exports.handler = async function (argv:yargs.Arguments) {
+exports.handler = function (argv:yargs.Arguments) {
   const sqs:AWS.SQS = common.getSQS()
-  const messages = await listMessage(sqs, {
+  listMessage(sqs, {
     queueName: argv.queueName,
     print: true,
     limit: argv.limit,
     timeout: argv.timeout,
     timestamp: argv.timestamp
+  }).catch((error) => {
+    console.error(error)
+    process.exit(1)
   })
 }

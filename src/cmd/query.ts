@@ -12,7 +12,14 @@ exports.builder = function (yargs:yargs.Argv) {
     .describe('hide-headers', 'Hide headers')
   return yargs
 }
-exports.handler = async function (argv:yargs.Arguments) {
+exports.handler = function (argv:yargs.Arguments) {
+  queryDb(argv).catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
+}
+
+async function queryDb (argv:yargs.Arguments) {
   const db:sqlite3.Database = await localDb.getDb()
   try {
     const messages = await query(db, argv.sql)

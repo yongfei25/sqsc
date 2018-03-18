@@ -31,5 +31,8 @@ exports.handler = function (argv:yargs.Arguments) {
       }
     })
     console.log(columnify(cols))
+  }).catch((error) => {
+    console.error(error)
+    process.exit(1)
   })
 }

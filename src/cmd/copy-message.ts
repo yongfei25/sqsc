@@ -11,19 +11,23 @@ exports.builder = function (yargs:yargs.Argv) {
     .default('timeout', 30)
   return yargs
 }
-exports.handler = async function (argv:yargs.Arguments) {
+exports.handler = function (argv:yargs.Arguments) {
   const sqs:AWS.SQS = common.getSQS()
   const param = {
     sourceQueueName: argv.fromQueueName,
     targetQueueName: argv.toQueueName,
     timeout: argv.timeout
   }
-  const allMessages = await copyMessage(sqs, param, (messages) => {
+  copyMessage(sqs, param, (messages) => {
     messages.forEach(message => {
       console.log(`Copied ${truncateBody(message.Body, 60)}`)
     })
+  }).then((allMessages) => {
+    console.log(`Done. Copied ${allMessages.length}.`)
+  }).catch((error) => {
+    console.error(error)
+    process.exit(1)
   })
-  console.log(`Done. Copied ${allMessages.length}.`)
 }
 
 function truncateBody (s:string, length:number):string {
