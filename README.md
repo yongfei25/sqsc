@@ -1,3 +1,4 @@
+[![Board Status](https://dev.azure.com/yongfei25/ecb9d60b-b815-4f9c-bcdc-23c41d4dbf75/444de725-ff0c-4619-a848-8fabc2cb3013/_apis/work/boardbadge/d7975d24-fa00-4429-88ec-9a24a78aad69)](https://dev.azure.com/yongfei25/ecb9d60b-b815-4f9c-bcdc-23c41d4dbf75/_boards/board/t/444de725-ff0c-4619-a848-8fabc2cb3013/Microsoft.RequirementCategory)
 # sqsc
 [![npm version](https://badge.fury.io/js/sqsc.svg)](https://badge.fury.io/js/sqsc)
 [![Build Status](https://travis-ci.org/yongfei25/sqsc.svg?branch=master)](https://travis-ci.org/yongfei25/sqsc) 
